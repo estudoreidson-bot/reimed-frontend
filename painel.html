@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Painel da Recepção</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;margin:0}
+    .wrap{max-width:920px;margin:40px auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.07)}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    h1{margin:0;font-size:24px}
+    button, .btn{padding:10px 14px;border:0;border-radius:10px;font-weight:700;cursor:pointer;background:#2563eb;color:#fff;text-decoration:none}
+    .muted{color:#555}
+    pre{background:#0b1020;color:#e6edf3;padding:12px;border-radius:10px;overflow:auto}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+    .card{border:1px solid #e5e7eb;border-radius:12px;padding:14px}
+    label{display:block;margin:10px 0 6px;font-weight:600}
+    input{width:100%;padding:10px;border:1px solid #d8dbe2;border-radius:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Painel da Recepção</h1>
+      <div>
+        <span id="who" class="muted"></span>
+        <button id="logout" style="margin-left:10px">Sair</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Verificar API</h3>
+        <button id="btnHealth">GET /health</button>
+        <button id="btnHello" style="margin-left:8px">GET /api/hello</button>
+        <pre id="out1"></pre>
+      </div>
+
+      <div class="card">
+        <h3>Rota protegida</h3>
+        <button id="btnProt">GET /api/admin/protegida</button>
+        <pre id="out2"></pre>
+      </div>
+
+      <div class="card">
+        <h3>Abrir atendimento (rascunho)</h3>
+        <label>CPF do paciente</label>
+        <input id="pacCpf" placeholder="somente números"/>
+        <label>Nome completo</label>
+        <input id="pacNome" placeholder="nome do paciente"/>
+        <button id="btnFake" style="margin-top:10px">Salvar rascunho local</button>
+        <pre id="out3"></pre>
+        <p class="muted">Observação: endpoint real de cadastro entra depois que definirmos o modelo de dados. Por ora, guarda localmente.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://remedy-queimadas-api.onrender.com';
+    const token = localStorage.getItem('token');
+
+    function requireAuth(){
+      if(!token){ window.location.href = './receptionist.html'; }
+    }
+    function decodeJwt(t){
+      try{
+        const base = t.split('.')[1];
+        return JSON.parse(atob(base.replace(/-/g,'+').replace(/_/g,'/')));
+      }catch{ return null; }
+    }
+    function show(el, data){
+      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    requireAuth();
+    const payload = decodeJwt(token);
+    document.getElementById('who').textContent = payload ? `CPF ${payload.cpf} • role ${payload.role}` : '';
+
+    document.getElementById('logout').onclick = () => {
+      localStorage.removeItem('token');
+      window.location.href = './receptionist.html';
+    };
+
+    document.getElementById('btnHealth').onclick = async () => {
+      const r = await fetch(API_BASE + '/health');
+      show(document.getElementById('out1'), await r.json());
+    };
+    document.getElementById('btnHello').onclick = async () => {
+      const r = await fetch(API_BASE + '/api/hello');
+      show(document.getElementById('out1'), await r.json());
+    };
+    document.getElementById('btnProt').onclick = async () => {
+      const r = await fetch(API_BASE + '/api/admin/protegida', { headers: { Authorization: 'Bearer '+token }});
+      const t = await r.text(); let j; try{ j = JSON.parse(t) } catch { j = { raw:t } }
+      show(document.getElementById('out2'), { status: r.status, body: j });
+    };
+
+    document.getElementById('btnFake').onclick = () => {
+      const cpf = (document.getElementById('pacCpf').value||'').replace(/\D/g,'');
+      const nome = document.getElementById('pacNome').value||'';
+      const draft = { cpf, nome, createdAt: new Date().toISOString() };
+      localStorage.setItem('draft_atendimento', JSON.stringify(draft));
+      show(document.getElementById('out3'), { salvo: true, draft });
+    };
+  </script>
+</body>
+</html>
