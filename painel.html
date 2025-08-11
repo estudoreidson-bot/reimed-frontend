@@ -15,7 +15,8 @@
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
     .card{border:1px solid #e5e7eb;border-radius:12px;padding:14px}
     label{display:block;margin:10px 0 6px;font-weight:600}
-    input{width:100%;padding:10px;border:1px solid #d8dbe2;border-radius:10px}
+    input,textarea{width:100%;padding:10px;border:1px solid #d8dbe2;border-radius:10px}
+    textarea{min-height:110px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
   </style>
 </head>
 <body>
@@ -53,13 +54,25 @@
       </div>
 
       <div class="card">
-        <h3>Abrir atendimento (rascunho)</h3>
-        <label>CPF do paciente</label>
-        <input id="pacCpf" placeholder="somente números"/>
-        <label>Nome completo</label>
-        <input id="pacNome" placeholder="nome do paciente"/>
-        <button id="btnFake" style="margin-top:10px">Salvar rascunho local</button>
-        <pre id="out3"></pre>
+        <h3>Salvar receita (teste)</h3>
+        <p class="muted">Cole/edite os campos e clique “Salvar receita”. Vai acumular no servidor e sair no PDF por data.</p>
+        <label>JSON da receita</label>
+        <textarea id="rxJson">{
+  "data": "2025-08-11T10:30:00Z",
+  "pacienteNome": "Fulano de Tal",
+  "pacienteCPF": "11122233344",
+  "medico": "Dra. Exemplo",
+  "crm": "CRM-BA 00000",
+  "medicamentos": [
+    { "nome": "Dipirona 500mg", "dose": "1 comp", "posologia": "6/6h se dor" }
+  ],
+  "observacoes": "Tomar com água."
+}</textarea>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button id="btnSaveRx">Salvar receita</button>
+          <button id="btnOpenPdf">Abrir PDF deste mês</button>
+        </div>
+        <pre id="outSave"></pre>
       </div>
     </div>
   </div>
@@ -86,7 +99,7 @@
       show(document.getElementById('out2'), { status:r.status, body:j });
     };
 
-    // PDF de receitas
+    // PDF por período
     document.getElementById('btnPdf').onclick = () => {
       const from=document.getElementById('dtFrom').value;
       const to=document.getElementById('dtTo').value;
@@ -94,13 +107,32 @@
       window.open(url,'_blank');
     };
 
-    // Rascunho local (igual ao seu)
-    document.getElementById('btnFake').onclick = () => {
-      const cpf=(document.getElementById('pacCpf').value||'').replace(/\D/g,'');
-      const nome=document.getElementById('pacNome').value||'';
-      const draft={cpf,nome,createdAt:new Date().toISOString()};
-      localStorage.setItem('draft_atendimento', JSON.stringify(draft));
-      show(document.getElementById('out3'), { salvo:true, draft });
+    // Salvar receita de teste
+    document.getElementById('btnSaveRx').onclick = async () => {
+      const txt = document.getElementById('rxJson').value;
+      let obj;
+      try { obj = JSON.parse(txt); }
+      catch { show(document.getElementById('outSave'), 'JSON inválido'); return; }
+
+      const r = await fetch(API_BASE+'/api/prescricoes', {
+        method:'POST',
+        headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+        body: JSON.stringify(obj)
+      });
+      const t = await r.text(); let j; try{ j=JSON.parse(t) } catch { j={ raw:t } }
+      show(document.getElementById('outSave'), { status:r.status, body:j });
+    };
+
+    // Abrir PDF do mês da data da receita do textarea (atalho)
+    document.getElementById('btnOpenPdf').onclick = () => {
+      try {
+        const obj = JSON.parse(document.getElementById('rxJson').value);
+        const d = new Date(obj.data || new Date().toISOString());
+        const from = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+        const to = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-28`;
+        const url=`${API_BASE}/api/prescricoes/relatorio.pdf?from=${from}&to=${to}&token=${encodeURIComponent(token)}`;
+        window.open(url,'_blank');
+      } catch { alert('JSON inválido'); }
     };
   </script>
 </body>
