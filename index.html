@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Queimadas Telemedicina — Início</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;margin:0;background:#f0f2f5;color:#111}
+    main{max-width:860px;margin:0 auto;padding:24px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+    a.button{display:block;text-align:center;padding:12px;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#111}
+    a.button:hover{background:#f7f7f8}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Queimadas Telemedicina</h1>
+  <div class="grid">
+    <div class="card">
+      <h2>Paciente</h2>
+      <p>Entrar com CPF, escolher médico, abrir consulta e ver receitas aprovadas.</p>
+      <a class="button" href="./paciente.html">Abrir paciente</a>
+    </div>
+    <div class="card">
+      <h2>Médico</h2>
+      <p>Ver fila, atender e finalizar consultas aprovando a prescrição.</p>
+      <a class="button" href="./medico.html">Abrir médico</a>
+    </div>
+    <div class="card">
+      <h2>Painel rápido</h2>
+      <p>Atalhos úteis.</p>
+      <a class="button" href="./painel.html">Abrir painel</a>
+    </div>
+    <div class="card">
+      <h2>API (Render)</h2>
+      <p>Testes das rotas atuais.</p>
+      <a class="button" target="_blank" href="https://remedy-queimadas-api.onrender.com/health">Health</a>
+      <a class="button" target="_blank" href="https://remedy-queimadas-api.onrender.com/api/db/status">DB status</a>
+      <a class="button" target="_blank" href="https://remedy-queimadas-api.onrender.com/api/prescricoes?from=2025-01-01&to=2025-12-31">Prescrições (JSON)</a>
+      <a class="button" target="_blank" href="https://remedy-queimadas-api.onrender.com/api/prescricoes/relatorio.pdf?from=2025-08-01&to=2025-08-31">PDF Agosto/2025</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>
