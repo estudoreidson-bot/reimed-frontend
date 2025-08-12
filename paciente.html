@@ -1,42 +1,43 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Médico IA – Atendimento</title>
   <style>
-    body { margin:0; font-family:Inter, system-ui, Arial; background:#E9F3FC; }
-    .chat { height:100vh; display:flex; flex-direction:column; }
+    :root { --bg:#E9F3FC; --bd:#C9E2F8; --p:#fff; --d:#DCF2FF; --tx:#0B2B4C; }
+    * { box-sizing:border-box; }
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); }
+    .app { height:100%; display:flex; flex-direction:column; }
     header { padding:12px 16px; background:#0F3566; color:white; display:flex; align-items:center; gap:12px; }
-    .content { flex:1; padding:16px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
-    .msg { max-width:80%; padding:10px 14px; border-radius:14px; border:1px solid #C9E2F8; }
-    .patient { background:#fff; align-self:flex-start; }
-    .doctor { background:#DCF2FF; align-self:flex-end; }
+    .log { flex:1; padding:16px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
+    .msg { max-width:78%; padding:10px 14px; border-radius:14px; border:1px solid var(--bd); font-size:15px; line-height:1.45; color:var(--tx); }
+    .patient { background:var(--p); align-self:flex-start; }
+    .doctor { background:var(--d); align-self:flex-end; }
     .typing { color:#3F6EA5; font-size:14px; }
-    .composer { display:flex; gap:8px; padding:12px; background:white; border-top:1px solid #C9E2F8;}
-    .composer input { flex:1; padding:12px; border-radius:10px; border:1px solid #C9E2F8; }
-    .composer button { padding:12px 18px; border:none; border-radius:10px; background:#0A6CC2; color:white; font-weight:700; cursor:pointer; }
+    .composer { display:flex; gap:8px; padding:12px; background:#fff; border-top:1px solid var(--bd); }
+    .composer input { flex:1; padding:12px; border-radius:10px; border:1px solid var(--bd); }
+    .composer button { padding:12px 18px; border:none; border-radius:10px; background:#0A6CC2; color:white; font-weight:700; }
   </style>
 </head>
 <body>
-<div class="chat">
+<div class="app">
   <header><strong>Médico IA</strong></header>
-  <div id="log" class="content"></div>
+  <div id="log" class="log"></div>
   <div class="composer">
-    <input id="in" placeholder="Digite sua resposta..." />
+    <input id="in" placeholder="Digite sua resposta..." autocomplete="off" />
     <button id="send">Enviar</button>
   </div>
 </div>
 <script>
+const params = new URLSearchParams(location.search);
+const cpf = params.get('cpf') || '';
+
 const log = document.getElementById('log');
 const input = document.getElementById('in');
 const send = document.getElementById('send');
 
-const params = new URLSearchParams(location.search);
-const cpf = params.get('cpf') || '';
-const spec = params.get('spec') || 'Clínico Geral';
-
-function typingDelay(text) {{
+function typingDelay(text) {
   const len = text.length;
   let ms;
   if (len <= 20) ms = 60_000 + Math.random()*60_000;
@@ -44,53 +45,53 @@ function typingDelay(text) {{
   else if (len <= 60) ms = 180_000 + Math.random()*40_000;
   else ms = 220_000 + Math.random()*80_000;
   return Math.max(ms, 20_000);
-}}
+}
 
-function add(role, text) {{
+function add(role, text) {
   const el = document.createElement('div');
   el.className = 'msg ' + role;
   el.textContent = text;
   log.appendChild(el);
   log.scrollTop = log.scrollHeight;
-}}
+}
 
-function ask(text) {{
+function ask(text) {
   const t = document.createElement('div');
   t.className = 'typing';
   t.textContent = 'Médico IA está digitando…';
   log.appendChild(t);
   log.scrollTop = log.scrollHeight;
   const ms = typingDelay(text);
-  setTimeout(()=>{{ t.remove(); add('doctor', text); }}, ms);
-}}
+  setTimeout(()=>{ t.remove(); add('doctor', text); }, ms);
+}
 
-function nextQuestion(step) {{
-  if (step===0) ask("Sou o Médico IA de " + spec + ". Para entender melhor, qual é o principal motivo da consulta hoje?");
-  if (step===1) ask("Há quanto tempo isso começou e como tem evoluído?");
-  if (step===2) ask("Você tem alguma alergia ou usa medicações regularmente? Se sim, quais?");
-  if (step===3) ask("Pode me enviar exames, fotos ou PDFs que considere relevantes?");
-  if (step===4) ask("Com base no que conversamos, vou montar um resumo SOAP e propor uma conduta inicial. Deseja prosseguir?");
-}}
+const script = [
+  "Sou o Médico IA. Qual o principal motivo da sua consulta hoje?",
+  "Há quanto tempo isso começou e como tem evoluído?",
+  "Você tem alergias ou usa medicações regularmente? Quais?",
+  "Pode me enviar exames, fotos ou PDFs relevantes?",
+  "Com base no que conversamos, vou montar um resumo SOAP e propor uma conduta inicial. Podemos prosseguir?"
+];
 
 let step = 0;
-nextQuestion(step);
+setTimeout(()=>ask(script[step]), 1200); // 1s antes da animação
 
 send.addEventListener('click', handle);
-input.addEventListener('keydown', e=>{{ if (e.key==='Enter') handle(); }});
+input.addEventListener('keydown', e=>{ if (e.key==='Enter') handle(); });
 
-function handle() {{
+function handle() {
   const txt = input.value.trim();
   if (!txt) return;
   add('patient', txt);
-  input.value = '';
+  input.value='';
   step += 1;
-  if (step <= 4) nextQuestion(step);
-  else {{
-    // Encaminhamento ao médico humano (simulado)
+  if (step < script.length) {
+    ask(script[step]);
+  } else {
     ask("Encaminhando seu caso ao médico humano para revisão. Assim que for aprovado, sua receita e documentos ficarão disponíveis aqui.");
-    setTimeout(()=>{{ location.href = './medico.html?cpf='+encodeURIComponent(cpf)+'&spec='+encodeURIComponent(spec); }}, 4000);
-  }}
-}}
+    setTimeout(()=>{ location.href='./medico.html?cpf='+encodeURIComponent(cpf); }, 4000);
+  }
+}
 </script>
 </body>
 </html>
