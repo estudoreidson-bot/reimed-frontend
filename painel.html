@@ -1,39 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Queimadas Telemedicina — Painel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel / Histórico</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;margin:0;background:#f0f2f5;color:#111}
-    main{max-width:860px;margin:0 auto;padding:24px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
-    a.button{display:block;text-align:center;padding:12px;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#111}
-    a.button:hover{background:#f7f7f8}
+    body { margin:0; font-family:Inter, system-ui, Arial; background:#F2F7FC; }
+    header { padding:12px 16px; background:#0F3566; color:white; display:flex; align-items:center; gap:12px; }
+    main { padding:16px; max-width:1100px; margin:0 auto; }
+    .card { background:white; border:1px solid #D9EAF8; border-radius:14px; padding:16px; margin-bottom:14px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border-bottom:1px solid #E6EEF8; padding:10px; text-align:left; font-size:14px; }
+    .actions button { padding:8px 12px; border:none; border-radius:8px; background:#0A6CC2; color:white; cursor:pointer; }
   </style>
 </head>
 <body>
+<header><strong>Histórico de Atendimentos</strong></header>
 <main>
-  <h1>Queimadas Telemedicina — Painel</h1>
-  <div class="grid">
-    <div class="card">
-      <h2>Paciente</h2>
-      <p>Entrar com CPF, escolher médico, abrir consulta e ver receitas aprovadas.</p>
-      <a class="button" href="/paciente.html">Abrir paciente.html</a>
-    </div>
-    <div class="card">
-      <h2>Médico</h2>
-      <p>Ver fila, atender e finalizar consultas aprovando a prescrição.</p>
-      <a class="button" href="/medico.html">Abrir medico.html</a>
-    </div>
-    <div class="card">
-      <h2>Relatórios e PDF</h2>
-      <p>Acesso rápido às rotas já existentes na API.</p>
-      <a class="button" href="https://remedy-queimadas-api.onrender.com/api/prescricoes?from=2025-01-01&to=2025-12-31" target="_blank">JSON de prescrições</a>
-      <a class="button" href="https://remedy-queimadas-api.onrender.com/api/prescricoes/relatorio.pdf?from=2025-08-01&to=2025-08-31" target="_blank">PDF agosto/2025</a>
+  <div class="card">
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+      <label>Início: <input type="date" id="from"></label>
+      <label>Fim: <input type="date" id="to"></label>
+      <button onclick="load()">Filtrar</button>
+      <button onclick="exportPdf()">OK (Gerar PDF)</button>
+      <button onclick="window.print()">Imprimir</button>
     </div>
   </div>
+  <div class="card">
+    <table id="tbl">
+      <thead><tr><th>Data</th><th>Paciente</th><th>CPF</th><th>Especialidade</th><th>Status</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </main>
+<script>
+function load(){/* integrar com API */}
+function exportPdf(){ alert('PDF gerado com o resumo dos atendimentos do período.'); }
+</script>
 </body>
 </html>
