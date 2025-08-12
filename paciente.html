@@ -1,134 +1,96 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Queimadas Telemedicina — Paciente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Médico IA – Atendimento</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;margin:0;background:#f7f7f8;color:#111}
-    header,main{max-width:860px;margin:0 auto;padding:16px}
-    header{background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:16px 0}
-    label{display:block;margin:8px 0 4px}
-    input,select,button{font:inherit;padding:10px;border:1px solid #d1d5db;border-radius:8px;width:100%}
-    button{cursor:pointer}
-    .hidden{display:none}
-    ul{padding-left:18px}
-    a{color:#0a58ca}
+    body { margin:0; font-family:Inter, system-ui, Arial; background:#E9F3FC; }
+    .chat { height:100vh; display:flex; flex-direction:column; }
+    header { padding:12px 16px; background:#0F3566; color:white; display:flex; align-items:center; gap:12px; }
+    .content { flex:1; padding:16px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
+    .msg { max-width:80%; padding:10px 14px; border-radius:14px; border:1px solid #C9E2F8; }
+    .patient { background:#fff; align-self:flex-start; }
+    .doctor { background:#DCF2FF; align-self:flex-end; }
+    .typing { color:#3F6EA5; font-size:14px; }
+    .composer { display:flex; gap:8px; padding:12px; background:white; border-top:1px solid #C9E2F8;}
+    .composer input { flex:1; padding:12px; border-radius:10px; border:1px solid #C9E2F8; }
+    .composer button { padding:12px 18px; border:none; border-radius:10px; background:#0A6CC2; color:white; font-weight:700; cursor:pointer; }
   </style>
 </head>
 <body>
-<header>
-  <h1>Queimadas Telemedicina — Paciente</h1>
-</header>
-<main>
-  <div class="card" id="loginBox">
-    <h2>Entrar</h2>
-    <label>CPF</label>
-    <input id="cpf" placeholder="Somente números" />
-    <label>Nome completo</label>
-    <input id="nome" placeholder="Seu nome" />
-    <button id="entrarBtn">Entrar</button>
+<div class="chat">
+  <header><strong>Médico IA</strong></header>
+  <div id="log" class="content"></div>
+  <div class="composer">
+    <input id="in" placeholder="Digite sua resposta..." />
+    <button id="send">Enviar</button>
   </div>
-
-  <div class="card hidden" id="fluxoBox">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <h2>Abrir consulta</h2>
-      <button id="sairBtn" style="width:auto">Sair</button>
-    </div>
-    <label>Médico</label>
-    <select id="medico"></select>
-    <button id="abrirConsultaBtn" style="margin-top:12px">Criar consulta</button>
-  </div>
-
-  <div class="card hidden" id="receitasBox">
-    <h2>Minhas prescrições aprovadas</h2>
-    <ul id="listaPrescricoes"></ul>
-  </div>
-</main>
-
+</div>
 <script>
-const BASE_URL = "https://remedy-queimadas-api.onrender.com";
+const log = document.getElementById('log');
+const input = document.getElementById('in');
+const send = document.getElementById('send');
 
-function token(){ return localStorage.getItem('pacienteToken'); }
-function setToken(t){ localStorage.setItem('pacienteToken', t); }
-function logout(){ localStorage.removeItem('pacienteToken'); location.reload(); }
+const params = new URLSearchParams(location.search);
+const cpf = params.get('cpf') || '';
+const spec = params.get('spec') || 'Clínico Geral';
 
-async function entrar() {
-  const cpf = document.getElementById('cpf').value.trim();
-  const nome = document.getElementById('nome').value.trim();
-  if(!cpf || !nome){ alert('Informe CPF e nome'); return; }
-  const r = await fetch(`${BASE_URL}/api/pacientes/entrar`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ cpf, nome })
-  });
-  if(!r.ok){ alert('Falha ao entrar'); return; }
-  const j = await r.json();
-  setToken(j.token);
-  await carregarMedicos();
-  mostrarFluxo();
-  await carregarPrescricoes();
-}
+function typingDelay(text) {{
+  const len = text.length;
+  let ms;
+  if (len <= 20) ms = 60_000 + Math.random()*60_000;
+  else if (len <= 40) ms = 120_000 + Math.random()*60_000;
+  else if (len <= 60) ms = 180_000 + Math.random()*40_000;
+  else ms = 220_000 + Math.random()*80_000;
+  return Math.max(ms, 20_000);
+}}
 
-async function carregarMedicos(){
-  const r = await fetch(`${BASE_URL}/api/medicos`);
-  const list = await r.json();
-  const sel = document.getElementById('medico');
-  sel.innerHTML = '';
-  list.forEach(m=>{
-    const o = document.createElement('option');
-    o.value = m.id; o.textContent = `${m.nome} (${m.crm})`; sel.appendChild(o);
-  });
-}
+function add(role, text) {{
+  const el = document.createElement('div');
+  el.className = 'msg ' + role;
+  el.textContent = text;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}}
 
-async function abrirConsulta(){
-  const medico_id = document.getElementById('medico').value;
-  const r = await fetch(`${BASE_URL}/api/consultas`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token()},
-    body: JSON.stringify({ medico_id: Number(medico_id) })
-  });
-  if(!r.ok){ alert('Falha ao criar consulta'); return; }
-  alert('Consulta criada com sucesso');
-  await carregarPrescricoes();
-}
+function ask(text) {{
+  const t = document.createElement('div');
+  t.className = 'typing';
+  t.textContent = 'Médico IA está digitando…';
+  log.appendChild(t);
+  log.scrollTop = log.scrollHeight;
+  const ms = typingDelay(text);
+  setTimeout(()=>{{ t.remove(); add('doctor', text); }}, ms);
+}}
 
-async function carregarPrescricoes(){
-  const r = await fetch(`${BASE_URL}/api/minhas-prescricoes`, {
-    headers:{'Authorization':'Bearer '+token()}
-  });
-  if(!r.ok){ document.getElementById('receitasBox').classList.add('hidden'); return; }
-  const itens = await r.json();
-  const ul = document.getElementById('listaPrescricoes');
-  ul.innerHTML = '';
-  if((itens||[]).length === 0){
-    const li = document.createElement('li'); li.textContent = 'Nenhuma prescrição aprovada encontrada.'; ul.appendChild(li);
-  } else {
-    itens.forEach(p=>{
-      const li = document.createElement('li');
-      li.textContent = (p.paciente || p.paciente_nome || 'Prescrição');
-      ul.appendChild(li);
-    });
-  }
-  document.getElementById('receitasBox').classList.remove('hidden');
-}
+function nextQuestion(step) {{
+  if (step===0) ask("Sou o Médico IA de " + spec + ". Para entender melhor, qual é o principal motivo da consulta hoje?");
+  if (step===1) ask("Há quanto tempo isso começou e como tem evoluído?");
+  if (step===2) ask("Você tem alguma alergia ou usa medicações regularmente? Se sim, quais?");
+  if (step===3) ask("Pode me enviar exames, fotos ou PDFs que considere relevantes?");
+  if (step===4) ask("Com base no que conversamos, vou montar um resumo SOAP e propor uma conduta inicial. Deseja prosseguir?");
+}}
 
-function mostrarFluxo(){
-  document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('fluxoBox').classList.remove('hidden');
-}
+let step = 0;
+nextQuestion(step);
 
-document.getElementById('entrarBtn').addEventListener('click', entrar);
-document.getElementById('abrirConsultaBtn').addEventListener('click', abrirConsulta);
-document.getElementById('sairBtn').addEventListener('click', logout);
+send.addEventListener('click', handle);
+input.addEventListener('keydown', e=>{{ if (e.key==='Enter') handle(); }});
 
-(async function init(){
-  if(token()){
-    await carregarMedicos();
-    mostrarFluxo();
-    await carregarPrescricoes();
-  }
-})();
+function handle() {{
+  const txt = input.value.trim();
+  if (!txt) return;
+  add('patient', txt);
+  input.value = '';
+  step += 1;
+  if (step <= 4) nextQuestion(step);
+  else {{
+    // Encaminhamento ao médico humano (simulado)
+    ask("Encaminhando seu caso ao médico humano para revisão. Assim que for aprovado, sua receita e documentos ficarão disponíveis aqui.");
+    setTimeout(()=>{{ location.href = './medico.html?cpf='+encodeURIComponent(cpf)+'&spec='+encodeURIComponent(spec); }}, 4000);
+  }}
+}}
 </script>
 </body>
 </html>
