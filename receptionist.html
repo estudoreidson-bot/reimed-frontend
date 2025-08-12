@@ -1,86 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recepção – Queimadas Telemedicina</title>
   <style>
     :root {
-      --q-primary:#0A6CC2;
-      --q-secondary:#12A84E;
-      --bg:#E9F3FC;
-      --chat:#FDFDFD;
-      --bubble-patient:#FFFFFF;
-      --bubble-staff:#DCF2FF;
-      --border:#C9E2F8;
-      --text:#0B2B4C;
+      --q1:#0A6CC2; --q2:#12A84E; --bg:#E9F3FC; --tx:#0B2B4C;
+      --bubbleP:#FFFFFF; --bubbleS:#DCF2FF; --bd:#C9E2F8;
     }
     * { box-sizing:border-box; }
-    html,body { height:100%; margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg);}
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); }
     .app { height:100%; display:flex; flex-direction:column; }
-    header { padding:12px 16px; background:#0F3566; color:white; display:flex; align-items:center; gap:12px; }
-    header .title { font-weight:800; }
+    header { padding:12px 16px; background:#0F3566; color:#fff; display:flex; align-items:center; gap:12px; }
+    header .t { font-weight:800; }
     .chat { flex:1; display:flex; flex-direction:column; gap:12px; padding:16px; overflow-y:auto; }
-    .msg { max-width:80%; padding:10px 14px; border-radius:14px; border:1px solid var(--border); font-size:15px; line-height:1.4; color:var(--text);}
-    .msg.patient { align-self:flex-start; background:var(--bubble-patient); }
-    .msg.staff { align-self:flex-end; background:var(--bubble-staff); }
-    .typing { display:flex; align-items:center; gap:8px; color:#3F6EA5; font-size:14px; }
-    .typing.hidden { display:none; }
-    .composer { display:flex; gap:8px; padding:12px; background:white; border-top:1px solid var(--border);}
-    .composer input { flex:1; padding:12px; border-radius:10px; border:1px solid var(--border); }
-    .composer button { padding:12px 18px; border:none; border-radius:10px; background:var(--q-primary); color:white; font-weight:700; cursor:pointer; }
-    .spec-list { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:10px; }
-    .spec { background:#FFFFFF; border:1px solid var(--border); border-radius:12px; padding:10px; cursor:pointer; }
-    .hidden { display:none; }
+    .msg { max-width:78%; padding:10px 14px; border-radius:14px; border:1px solid var(--bd); font-size:15px; line-height:1.45; color:var(--tx);}
+    .patient { align-self:flex-start; background:var(--bubbleP);}
+    .staff { align-self:flex-end; background:var(--bubbleS);}
+    .typing { color:#3F6EA5; font-size:14px; }
+    .composer { display:flex; gap:8px; padding:12px; background:#fff; border-top:1px solid var(--bd);}
+    .composer input { flex:1; padding:12px; border-radius:10px; border:1px solid var(--bd);}
+    .composer button { padding:12px 18px; border:none; border-radius:10px; background:var(--q1); color:white; font-weight:700; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="title">Recepção – Queimadas Telemedicina</div>
-    </header>
-    <div id="chat" class="chat"></div>
-    <div class="composer">
-      <input id="input" placeholder="Escreva sua mensagem..." />
-      <button id="send">Enviar</button>
-    </div>
+<div class="app">
+  <header><div class="t">Recepção – Queimadas Telemedicina</div></header>
+  <div id="chat" class="chat"></div>
+  <div class="composer">
+    <input id="in" placeholder="Escreva sua mensagem..." autocomplete="off" />
+    <button id="send">Enviar</button>
   </div>
+</div>
 
 <script>
 const API_BASE = "https://remedy-queimadas-api.onrender.com";
 
 const chat = document.getElementById('chat');
-const input = document.getElementById('input');
+const input = document.getElementById('in');
 const sendBtn = document.getElementById('send');
 
-function delayForTyping(text, role='staff') {
-  // Regra: nenhuma digitação abaixo de 20s; faixas definidas
+function typingDelay(text) {
   const len = text.length;
   let ms;
-  if (len <= 20) ms = 60_000 + Math.random()*60_000; // 60–120s
+  if (len <= 20) ms = 60_000 + Math.random()*60_000;    // 60–120s
   else if (len <= 40) ms = 120_000 + Math.random()*60_000; // 120–180s
   else if (len <= 60) ms = 180_000 + Math.random()*40_000; // 180–220s
-  else ms = 220_000 + Math.random()*80_000; // 220–300s
-  // Garantir mínimo absoluto de 20s
-  ms = Math.max(ms, 20_000);
-  return ms;
+  else ms = 220_000 + Math.random()*80_000;                // 220–300s
+  return Math.max(ms, 20_000);
 }
 
 function showTyping(role='staff') {
   const el = document.createElement('div');
   el.className = 'typing';
-  el.dataset.role = role;
   el.textContent = (role==='staff'?'Recepção':'Você') + ' está digitando…';
   chat.appendChild(el);
   chat.scrollTop = chat.scrollHeight;
   return el;
 }
 
-function hideTyping(el) {
-  if (el) el.classList.add('hidden');
-}
+function hideTyping(el) { if (el) el.remove(); }
 
-function appendMsg(text, role) {
+function msg(text, role) {
   const el = document.createElement('div');
   el.className = 'msg ' + (role==='patient'?'patient':'staff');
   el.textContent = text;
@@ -88,190 +70,83 @@ function appendMsg(text, role) {
   chat.scrollTop = chat.scrollHeight;
 }
 
+let state = { step:'cpf', cpf:null, hasRegistration:null };
+
 function askCPF() {
   const t = "Olá! Bem-vindo(a) à Queimadas Telemedicina. Para começar, por favor, informe seu CPF para cadastro.";
-  const typing = showTyping('staff');
-  const ms = delayForTyping(t,'staff');
-  setTimeout(()=>{ hideTyping(typing); appendMsg(t,'staff'); }, ms);
+  const typ = showTyping('staff');
+  const ms = typingDelay(t);
+  setTimeout(()=>{ hideTyping(typ); msg(t,'staff'); }, ms);
 }
 
-let state = { step:'cpf', cpf:null, hasRegistration:null };
+async function verifyCPF(cpf) {
+  const typing = showTyping('staff');
+  const info = "Verificando seu cadastro. Aguarde um instante.";
+  const ms = typingDelay(info);
+  setTimeout(()=>msg(info,'staff'), Math.max(1000, ms/3));
+
+  let found = false;
+  try {
+    const r = await fetch(API_BASE + "/patients/exists?cpf=" + encodeURIComponent(cpf));
+    if (r.ok) { const data = await r.json(); found = !!data.exists; }
+  } catch(e) { /* mantém false */ }
+
+  setTimeout(()=>{
+    hideTyping(typing);
+    if (found) onFound();
+    else onNotFound();
+  }, ms);
+}
+
+function onFound() {
+  const t = "Cadastro encontrado. Seu atendimento será iniciado agora.";
+  const typ = showTyping('staff');
+  const ms = typingDelay(t);
+  setTimeout(()=>{ hideTyping(typ); msg(t,'staff'); goToIA(); }, ms);
+}
+
+function onNotFound() {
+  const t = "Não encontramos seu cadastro. Envie, por favor, numa única mensagem: Nome completo; Data de nascimento; Telefone/WhatsApp; E-mail (opcional); Cidade/UF; Alergias e medicações em uso.";
+  const typ = showTyping('staff');
+  const ms = typingDelay(t);
+  setTimeout(()=>{ hideTyping(typ); msg(t,'staff'); state.step='register'; }, ms);
+}
+
+function afterRegister() {
+  const t = "Cadastro concluído. Seu atendimento será iniciado agora.";
+  const typ = showTyping('staff');
+  const ms = typingDelay(t);
+  setTimeout(()=>{ hideTyping(typ); msg(t,'staff'); goToIA(); }, ms);
+}
+
+function goToIA() {
+  setTimeout(()=>{
+    const url = new URL('./paciente.html', location.href);
+    url.searchParams.set('cpf', state.cpf || '');
+    location.href = url.toString();
+  }, 1200);
+}
 
 sendBtn.addEventListener('click', send);
 input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') send(); });
 
 function send() {
-  const text = input.value.trim();
-  if (!text) return;
-  appendMsg(text,'patient');
-  input.value = '';
+  const t = input.value.trim();
+  if (!t) return;
+  msg(t, 'patient');
+  input.value='';
 
   if (state.step==='cpf') {
-    state.cpf = text.replace(/\D/g,'');
-    // Simular verificação no backend/integração
+    state.cpf = t.replace(/\D/g,'');
     verifyCPF(state.cpf);
-  } else if (state.step==='choose-spec') {
-    // apenas ecoa a escolha e segue para IA
-    routeToIA(text);
-  } else if (state.step==='register-fields') {
-    // Aqui você coletaria os campos e mandaria para API
-    state.hasRegistration = true;
-    afterRegistration();
+  } else if (state.step==='register') {
+    state.hasRegistration = true; // MVP: assume ok
+    afterRegister();
   }
 }
 
-async function verifyCPF(cpf) {
-  const typing = showTyping('staff');
-  const msg = "Verificando seu cadastro. Aguarde um instante.";
-  const ms = delayForTyping(msg,'staff');
-  setTimeout(()=>appendMsg(msg,'staff'), Math.max(1000, ms/3)); // mostra mensagem durante a digitação
-
-  // Nesta versão MVP, consulta simplificada ao endpoint (adaptar no backend).
-  let found = false;
-  try {
-    const r = await fetch(API_BASE + "/patients/exists?cpf=" + cpf);
-    if (r.ok) {
-      const data = await r.json();
-      found = !!data.exists;
-    }
-  } catch(e) {
-    // Mantém found=false em caso de falha
-  }
-
-  setTimeout(()=>{
-    hideTyping(typing);
-    if (found) {
-      state.hasRegistration = true;
-      askSpecialty();
-    } else {
-      state.hasRegistration = false;
-      requestRegistration();
-    }
-  }, ms);
-}
-
-function askSpecialty() {
-  const typing = showTyping('staff');
-  const t1 = "Cadastro encontrado. Com qual médico/especialidade você deseja falar?";
-  const ms = delayForTyping(t1,'staff');
-  setTimeout(()=>{ hideTyping(typing); appendMsg(t1,'staff'); renderSpecList(); }, ms);
-}
-
-function renderSpecList() {
-  const div = document.createElement('div');
-  div.className = 'spec-list';
-  const specs = [
-    ["Clínico Geral","atendimento geral"],
-    ["Medicina de Família e Comunidade","cuidado integral / doenças comuns"],
-    ["Pediatra","crianças"],
-    ["Neonatologista","recém-nascidos"],
-    ["Geriatra","idosos"],
-    ["Ginecologista/Obstetra","saúde feminina / gravidez"],
-    ["Urologista","sistema urinário / próstata"],
-    ["Cardiologista","coração"],
-    ["Cardiopediatra","coração infantil"],
-    ["Endocrinologista","hormônios / tireoide / diabetes"],
-    ["Endocrinopediatra","hormônios infantis"],
-    ["Ortopedista","ossos / articulações / coluna"],
-    ["Reumatologista","doenças autoimunes / articulações"],
-    ["Reumatopediatra","autoimunes em crianças"],
-    ["Dermatologista","pele / cabelo / unhas"],
-    ["Psiquiatra","saúde mental"],
-    ["Psicólogo","apoio emocional"],
-    ["Neurologista","cérebro / nervos"],
-    ["Neuropediatra","neurologia infantil"],
-    ["Otorrinolaringologista (Otorrino)","ouvido / nariz / garganta"],
-    ["Otorrino Pediátrico","ouvido / nariz / garganta em crianças"],
-    ["Oftalmologista","olhos / visão"],
-    ["Mastologista","mamas"],
-    ["Proctologista (Coloproctologia)","reto / ânus / hemorroidas"],
-    ["Gastroenterologista","estômago / intestinos"],
-    ["Hepatologista","fígado"],
-    ["Nefrologista","rins"],
-    ["Nefropediatra","rins em crianças"],
-    ["Pneumologista","pulmões / respiração"],
-    ["Pneumopediatra","pulmões infantis"],
-    ["Hematologista","sangue"],
-    ["Infectologista","infecções / doenças transmissíveis"],
-    ["Infectopediatra","infecções em crianças"],
-    ["Alergologista/Imunologista","alergias / imunidade"],
-    ["Angiologista","veias / circulação"],
-    ["Otoneurologista","tonturas / equilíbrio"],
-    ["Oncologista","câncer"],
-    ["Medicina Nuclear","diagnósticos por radiofármacos"],
-    ["Patologista","biópsias / anatomia patológica"],
-    ["Genetista Médico","genética / doenças raras"],
-    ["Medicina do Trabalho","saúde ocupacional / atestados"],
-    ["Medicina Esportiva","performance / lesões esportivas"],
-    ["Medicina da Dor","dor crônica"],
-    ["Medicina Paliativa","cuidado ao fim de vida"],
-    ["Nutrólogo","alimentação / nutrientes"],
-    ["Nutricionista","dieta / planejamento alimentar"],
-    ["Fonoaudiólogo","fala / deglutição / audição"],
-    ["Fisioterapeuta","reabilitação física"],
-    ["Fisiatra","reabilitação médica"],
-    ["Otorrino Foniatria","voz / fala"],
-    ["Ortopedia Pediátrica","ortopedia infantil"],
-    ["Reabilitação Vestibular","tonturas / equilíbrio"],
-    ["Dermatopediatra","pele infantil"],
-    ["Endodontista/Odontologia","dentes / canal"],
-    ["Ortopedia Coluna","coluna vertebral"],
-    ["Hepatopancreatobiliar (HPB)","fígado / pâncreas / vias biliares"],
-    ["Obstetrícia Fetal/Medicina Fetal","gestação / feto"],
-    ["Fertilidade/Reprodução Assistida","infertilidade"],
-    ["Otologia","ouvido"],
-    ["Rinologia","nariz / seios da face"],
-    ["Laringologia","laringe / voz"],
-    ["Ortomolecular","equilíbrio bioquímico (manipulados)"],
-  ];
-  specs.forEach(([name, desc])=>{
-    const card = document.createElement('div');
-    card.className = 'spec';
-    card.innerHTML = `<strong>${name}</strong><br><small>${desc}</small>`;
-    card.addEventListener('click', ()=>routeToIA(name));
-    div.appendChild(card);
-  });
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-  state.step = 'choose-spec';
-}
-
-function requestRegistration() {
-  const t = "Não encontramos seu cadastro. Vamos fazer um cadastro rápido: Nome completo; Data de nascimento; Telefone/WhatsApp; E-mail (opcional); Endereço (cidade/UF); Alergias/medicações em uso. Envie tudo em uma mensagem.";
-  const typing = showTyping('staff');
-  const ms = delayForTyping(t,'staff');
-  setTimeout(()=>{ hideTyping(typing); appendMsg(t,'staff'); state.step='register-fields'; }, ms);
-}
-
-function afterRegistration() {
-  const t = "Cadastro concluído. Com qual médico/especialidade você deseja falar?";
-  const typing = showTyping('staff');
-  const ms = delayForTyping(t,'staff');
-  setTimeout(()=>{ hideTyping(typing); appendMsg(t,'staff'); renderSpecList(); }, ms);
-}
-
-function routeToIA(spec) {
-  const msg1 = "Obrigado(a). Seu atendimento será iniciado agora.";
-  const typing1 = showTyping('staff');
-  const ms1 = delayForTyping(msg1,'staff');
-  setTimeout(()=>{ hideTyping(typing1); appendMsg(msg1,'staff'); }, ms1);
-
-  const msg2 = "Encaminhando para o médico da especialidade escolhida.";
-  const typing2 = showTyping('staff');
-  const ms2 = delayForTyping(msg2,'staff') + 1000;
-  setTimeout(()=>{ hideTyping(typing2); appendMsg(msg2,'staff'); }, ms2);
-
-  // Redireciona para página do Médico IA com query params
-  setTimeout(()=>{
-    const url = new URL('./paciente.html', location.href);
-    url.searchParams.set('cpf', state.cpf || '');
-    url.searchParams.set('spec', spec);
-    location.href = url.toString();
-  }, Math.max(ms1, ms2) + 1200);
-}
-
-// Inicialização
-setTimeout(askCPF, 1200); // garantir 1s antes da animação começar
+// iniciar com 1s antes da animação
+setTimeout(askCPF, 1200);
 </script>
 </body>
 </html>
