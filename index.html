@@ -1,59 +1,40 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Queimadas Telemedicina</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --q-primary:#0A6CC2;
-      --q-secondary:#12A84E;
-      --q-bg:#F2F7FC;
-      --q-dark:#0B2B4C;
+      --q1:#0A6CC2; --q2:#12A84E; --bg:#F2F7FC; --tx:#0B2B4C;
     }
     * { box-sizing:border-box; }
-    html,body { height:100%; margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    body { background:linear-gradient(160deg, var(--q-bg), #E6F2FB); }
-    header { display:flex; align-items:center; justify-content:center; padding:24px; gap:16px; }
-    header img.logo { width:64px; height:64px; object-fit:contain; }
-    header .titles { display:flex; flex-direction:column; }
-    header .titles h1 { margin:0; color:var(--q-dark); font-size:1.8rem; }
-    header .titles p { margin:4px 0 0; color:#134A78; font-weight:600; }
-    .hero { max-width:900px; margin:24px auto; background:white; border-radius:18px; padding:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08);}
-    .hero h2 { margin-top:0; color:var(--q-dark); }
-    .cta { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn { background:var(--q-primary); color:white; padding:14px 22px; border:none; border-radius:12px; font-weight:700; cursor:pointer; }
-    .btn.secondary { background:var(--q-secondary); }
-    .chat-preview { margin-top:24px; background:#F8FBFF; border:1px solid #D9EAF8; padding:18px; border-radius:14px; }
-    .badge { display:inline-block; background:#E8F3FF; border:1px solid #CBE3FA; color:#0B3D72; padding:6px 10px; border-radius:999px; font-size:.85rem; }
-    footer { text-align:center; color:#466A8F; padding:24px; }
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(160deg,var(--bg),#E6F2FB); }
+    .wrap { min-height:100%; display:grid; place-items:center; padding:24px; }
+    .card { width:min(900px,92vw); background:#fff; border:1px solid #D9EAF8; border-radius:16px; padding:24px; box-shadow:0 12px 28px rgba(0,0,0,.08); }
+    .head { display:flex; align-items:center; gap:14px; }
+    .title { font-size:24px; color:var(--tx); font-weight:800; margin:0; }
+    .slogan { margin:6px 0 0; color:#134A78; font-weight:600; }
+    .info { margin-top:16px; color:#134A78; }
+    .btn { margin-top:14px; display:inline-block; padding:12px 18px; background:var(--q1); color:#fff; border-radius:12px; text-decoration:none; font-weight:700; }
   </style>
 </head>
 <body>
-  <header>
-    <img class="logo" src="https://queimadas.ba.gov.br/src/images/logo.png" alt="Prefeitura de Queimadas" onerror="this.style.display='none'">
-    <div class="titles">
-      <h1>Queimadas Telemedicina</h1>
-      <p>Prefeitura de Queimadas – Mais trabalho, mais desenvolvimento</p>
+  <div class="wrap">
+    <div class="card">
+      <div class="head">
+        <div>
+          <h1 class="title">Queimadas Telemedicina</h1>
+          <div class="slogan">Prefeitura de Queimadas – Mais trabalho, mais desenvolvimento</div>
+        </div>
+      </div>
+      <p class="info">Abrindo chat com a recepção...</p>
+      <a class="btn" href="./receptionist.html">Abrir manualmente</a>
     </div>
-  </header>
-  <main class="hero">
-    <h2>Atendimento online seguro, rápido e humano</h2>
-    <p>Converse agora com a recepção para iniciar seu atendimento médico. Você precisará informar seu CPF para cadastro.</p>
-    <div class="cta">
-      <a class="btn" href="./receptionist.html">Iniciar Atendimento</a>
-      <a class="btn secondary" href="./paciente.html">Acessar área do paciente</a>
-    </div>
-    <div class="chat-preview">
-      <span class="badge">Fluxo estilo WhatsApp</span>
-      <p>O chat abre já com a recepção. Há animação de “digitando” antes de cada mensagem dos profissionais, com tempos realistas.</p>
-    </div>
-  </main>
-  <footer>
-    Base da API: <strong>https://remedy-queimadas-api.onrender.com</strong> • Site publicado no Netlify
-  </footer>
+  </div>
+  <script>
+    // A tela inicial deve abrir diretamente o chat
+    setTimeout(()=>{ location.href='./receptionist.html'; }, 1200);
+  </script>
 </body>
 </html>
