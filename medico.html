@@ -1,138 +1,46 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Queimadas Telemedicina — Médico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel do Médico Humano</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;margin:0;background:#f7f7f8;color:#111}
-    header,main{max-width:980px;margin:0 auto;padding:16px}
-    header{background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:16px 0}
-    label{display:block;margin:8px 0 4px}
-    input,button{font:inherit;padding:10px;border:1px solid #d1d5db;border-radius:8px}
-    button{cursor:pointer}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-    .hidden{display:none}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    body { margin:0; font-family:Inter, system-ui, Arial; background:#F2F7FC; }
+    header { padding:12px 16px; background:#0F3566; color:white; display:flex; align-items:center; gap:12px; }
+    main { padding:16px; max-width:1100px; margin:0 auto; }
+    .card { background:white; border:1px solid #D9EAF8; border-radius:14px; padding:16px; margin-bottom:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .row > * { flex:1; min-width:260px; }
+    button { padding:10px 16px; border:none; border-radius:10px; background:#0A6CC2; color:white; cursor:pointer; font-weight:700; }
+    textarea, input { width:100%; padding:10px; border:1px solid #C9E2F8; border-radius:10px; }
   </style>
 </head>
 <body>
-<header><h1>Queimadas Telemedicina — Médico</h1></header>
+<header><strong>Médico Humano</strong></header>
 <main>
-  <div class="card" id="loginBox">
-    <h2>Entrar</h2>
-    <div class="row">
-      <div>
-        <label>CRM</label>
-        <input id="crm" placeholder="CRM-BA 12345" />
-      </div>
-      <div>
-        <label>Nome</label>
-        <input id="nome" placeholder="Seu nome" />
-      </div>
-    </div>
-    <button id="entrarBtn">Entrar</button>
+  <div class="card">
+    <h3>Resumo do Caso</h3>
+    <textarea rows="6" placeholder="Resumo SOAP e proposta de conduta/receita da IA"></textarea>
   </div>
-
-  <div class="card hidden" id="painelBox">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <h2>Fila de Consultas</h2>
-      <div>
-        <button id="atualizarBtn" style="width:auto">Atualizar</button>
-        <button id="sairBtn" style="width:auto">Sair</button>
-      </div>
+  <div class="row">
+    <div class="card">
+      <h3>Receita</h3>
+      <textarea rows="8" placeholder="Receita – status: Aguardando liberação do sistema"></textarea>
     </div>
-    <table>
-      <thead>
-        <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Data</th><th>Status</th><th>Ações</th></tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <div class="card">
+      <h3>Relatório de Encaminhamento</h3>
+      <textarea rows="8" placeholder="Relatório de Encaminhamento – status: Aguardando liberação do sistema"></textarea>
+    </div>
+  </div>
+  <div class="card">
+    <button onclick="approve()">Aprovar e Enviar</button>
   </div>
 </main>
-
 <script>
-const BASE_URL = "https://remedy-queimadas-api.onrender.com";
-function token(){ return localStorage.getItem('medicoToken'); }
-function setToken(t){ localStorage.setItem('medicoToken', t); }
-function logout(){ localStorage.removeItem('medicoToken'); location.reload(); }
-
-async function entrar() {
-  const crm = document.getElementById('crm').value.trim();
-  const nome = document.getElementById('nome').value.trim();
-  if(!crm || !nome){ alert('Informe CRM e nome'); return; }
-  const r = await fetch(`${BASE_URL}/api/medicos/entrar`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ crm, nome })
-  });
-  if(!r.ok){ alert('Falha ao entrar'); return; }
-  const j = await r.json();
-  setToken(j.token);
-  document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('painelBox').classList.remove('hidden');
-  await carregarFila();
+function approve() {
+  alert('Aprovado. O paciente receberá a receita em PDF e, quando aplicável, o Relatório de Encaminhamento.');
+  location.href = './painel.html';
 }
-
-async function carregarFila(){
-  const r = await fetch(`${BASE_URL}/api/consultas/fila`, {
-    headers:{'Authorization':'Bearer '+token()}
-  });
-  if(!r.ok){ alert('Falha ao carregar fila'); return; }
-  const rows = await r.json();
-  const tb = document.getElementById('tbody');
-  tb.innerHTML = '';
-  rows.forEach(c=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${c.id}</td>
-      <td>${c.paciente_nome || ''}</td>
-      <td>${c.paciente_cpf || ''}</td>
-      <td>${c.data || ''}</td>
-      <td>${c.status}</td>
-      <td>
-        <button data-id="${c.id}" data-act="atender">Atender</button>
-        <button data-id="${c.id}" data-act="finalizar">Finalizar e aprovar</button>
-      </td>
-    `;
-    tb.appendChild(tr);
-  });
-}
-
-async function acao(evt){
-  const btn = evt.target.closest('button'); if(!btn) return;
-  const id = btn.getAttribute('data-id');
-  const act = btn.getAttribute('data-act');
-  if(act === 'atender'){
-    const r = await fetch(`${BASE_URL}/api/consultas/${id}/atender`, {
-      method:'POST', headers:{'Authorization':'Bearer '+token()}
-    });
-    if(!r.ok){ alert('Falha ao mudar status'); return; }
-  }
-  if(act === 'finalizar'){
-    const r = await fetch(`${BASE_URL}/api/consultas/${id}/finalizar`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token()},
-      body: JSON.stringify({ aprovarPrescricao: true })
-    });
-    if(!r.ok){ alert('Falha ao finalizar'); return; }
-  }
-  await carregarFila();
-}
-
-document.getElementById('entrarBtn').addEventListener('click', entrar);
-document.getElementById('tbody').addEventListener('click', acao);
-document.getElementById('atualizarBtn').addEventListener('click', carregarFila);
-document.getElementById('sairBtn').addEventListener('click', logout);
-
-(function init(){
-  if(token()){
-    document.getElementById('loginBox').classList.add('hidden');
-    document.getElementById('painelBox').classList.remove('hidden');
-    carregarFila();
-  }
-})();
 </script>
 </body>
 </html>
