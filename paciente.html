@@ -5,32 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Médico – Atendimento</title>
   <style>
-    :root {--bg:#f6f9fc;--primary:#073b6d;--accent:#0b7a3b;--card:#fff;--shadow:0 6px 24px rgba(0,0,0,.08);--radius:16px;--muted:#6b7280;}
+    :root {--bg:#f6f9fc;--primary:#073b6d;--accent:#0b7a3b;--card:#fff;--shadow:0 6px 24px rgba(0,0,0,.08);--radius:18px;--muted:#64748b;}
     * {box-sizing:border-box;-webkit-font-smoothing:antialiased}
     body {margin:0;font-family:system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;background:var(--bg);color:#0f172a}
     .app {min-height:100dvh;display:flex;flex-direction:column}
-    header.topo {position:sticky;top:0;z-index:5;background:#0b2f57;color:#fff;display:flex;align-items:center;gap:10px;padding:10px 14px;box-shadow:var(--shadow);}
-    header.topo img {height:28px;object-fit:contain}
-    .title {font-weight:700;font-size:15px;line-height:1.2}
+    header.topo {position:sticky;top:0;z-index:10;background:#0b2f57;color:#fff;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 14px;box-shadow:var(--shadow);}
+    header .logo-wrap {display:flex;flex-direction:column;align-items:center;gap:4px}
+    header .logo-wrap img {height:42px;max-width:80vw;object-fit:contain}
+    header .logo-wrap .subtitle {font-size:12px;opacity:.9;letter-spacing:.2px}
     .content {flex:1;display:flex;flex-direction:column;padding:12px;gap:10px}
     .card {background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
     .chat {flex:1;display:flex;flex-direction:column;gap:10px;overflow:auto;scroll-behavior:smooth;padding-bottom:10px}
     .bubble {max-width:85%;padding:10px 12px;border-radius:14px;line-height:1.35;font-size:15px;word-wrap:break-word;box-shadow:0 2px 10px rgba(0,0,0,.05)}
     .from-bot {background:#ecf4ff;border:1px solid #cfe3ff;align-self:flex-start}
     .from-user {background:#d1fae5;border:1px solid #a7f3d0;align-self:flex-end}
-    .input-row {position:sticky;bottom:0;display:flex;gap:8px;padding:10px;background:linear-gradient(180deg,transparent,rgba(246,249,252,.9) 20%, rgba(246,249,252,1) 60%)}
+    .typing {opacity:.75;font-style:italic}
+    .input-row {position:sticky;bottom:0;display:flex;gap:8px;padding:10px;background:linear-gradient(180deg,transparent,rgba(246,249,252,.9) 25%, rgba(246,249,252,1) 70%)}
     .text-in {flex:1;border:1px solid #dbe5f0;border-radius:12px;padding:12px 12px;font-size:16px;background:#fff}
     .btn {background:#0b7a3b;border:none;color:#fff;padding:12px 16px;border-radius:12px;font-weight:600;font-size:15px}
     .btn:disabled {opacity:.6}
     .footer-logo {position:sticky;bottom:0;display:flex;justify-content:center;padding:8px 0 14px}
-    .footer-logo img {max-width:220px;width:66vw;height:auto}
-    @media (min-width:768px) {.bubble{font-size:16px}.title{font-size:16px}}
+    .footer-logo img {max-width:240px;width:66vw;height:auto}
+    .countdown {font-variant-numeric:tabular-nums;font-weight:700;color:#0b7a3b}
+    @media (min-width:768px) {.bubble{font-size:16px}}
   </style>
 </head>
 <body><div class="app">
   <header class="topo">
-    <img src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
-    <div class="title">Queimadas – Telemedicina</div>
+    <div class="logo-wrap">
+      <img src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
+      <div class="subtitle">Queimadas Telemedicina</div>
+    </div>
   </header>
 
   <div class="content">
@@ -55,51 +60,51 @@
     const esp = params.get('especialidade') || sessionStorage.getItem('reimed_esp') || 'Clínico Geral';
     const n = params.get('nonce');
     const saved = sessionStorage.getItem('reimed_nonce');
+
     if(!n || !saved || n !== saved){ location.replace('receptionist.html'); }
     const history = [];
 
-    const addBubble=(t,who='bot')=>{ const b=document.createElement('div'); b.className='bubble '+(who==='bot'?'from-bot':'from-user'); b.textContent=t; chat.appendChild(b); chat.scrollTop=chat.scrollHeight; };
-    const thinkingThenTyping=(cb)=>{
+    const addBubble=(t,who='bot',extra='')=>{ const b=document.createElement('div'); b.className='bubble '+(who==='bot'?'from-bot':'from-user')+' '+extra; b.textContent=t; chat.appendChild(b); chat.scrollTop=chat.scrollHeight; return b; };
+    const thinkType=(cb)=>{ 
       const last = history.length? String(history[history.length-1].content||'') : '';
-      const think = Math.min(2500, Math.max(600, last.length*25));
-      const type  = Math.min(2200, Math.max(500, last.length*20));
-      const tmp = document.createElement('div'); tmp.className='bubble from-bot'; tmp.textContent='Médico pensando…'; chat.appendChild(tmp); chat.scrollTop=chat.scrollHeight;
-      setTimeout(()=>{ tmp.textContent='Médico digitando…'; chat.scrollTop=chat.scrollHeight; setTimeout(()=>{ tmp.remove(); cb(); }, type); }, think);
+      const think = Math.min(2800, Math.max(800, last.length*30));
+      const type  = Math.min(2500, Math.max(600, last.length*22));
+      const tmp = addBubble('Médico pensando…','bot','typing');
+      setTimeout(()=>{ tmp.textContent='Médico digitando…'; setTimeout(()=>{ tmp.remove(); cb(); }, type); }, think);
     };
 
-    addBubble('Olá, sou o Médico de '+esp+'. Vou dar continuidade ao seu atendimento.');
-
-    async function requestAI(){ 
-      try{
+    async function askAI(){ 
+      try {
         const res = await fetch(API_BASE + '/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ specialty: esp, history }) });
-        const js = await res.json(); const d = js.data || {}; const texto = d.mensagem || 'Certo, prossigamos.';
-        thinkingThenTyping(()=> addBubble(texto,'bot'));
-      }catch(e){ addBubble('Falha ao contactar o médico. Tente novamente em instantes.','bot'); }
+        const js = await res.json(); 
+        const texto = (js && js.data && js.data.mensagem) ? js.data.mensagem : 'Vamos continuar. Poderia descrever seus sintomas principais?';
+        thinkType(()=> addBubble(texto,'bot'));
+      } catch(e) { addBubble('Não consegui contato com o servidor agora. Vamos tentar novamente em alguns segundos.','bot'); }
     }
-    requestAI();
 
-    sendBtn.addEventListener('click', ()=>{
+    addBubble('Olá, sou o Médico de '+esp+'. Vou dar continuidade ao seu atendimento.');
+    askAI();
+
+    sendBtn.addEventListener('click', ()=>{ 
       const t = msg.value.trim(); if(!t) return;
       addBubble(t,'user'); history.push({role:'user', content:t}); msg.value='';
-      requestAI();
+      askAI();
     });
 
-    fileIn.addEventListener('change', async ()=>{
+    fileIn.addEventListener('change', async ()=>{ 
       if(!fileIn.files.length) return;
       const fd = new FormData(); for(const f of fileIn.files) fd.append('files', f);
-      addBubble('Enviando arquivo…','bot');
-      try{
+      addBubble('Enviando arquivo…','bot','typing');
+      try{ 
         const r = await fetch(API_BASE + '/api/upload', { method:'POST', body: fd });
         const j = await r.json();
-        if(j.ok){
+        if(j.ok){ 
           const links = (j.files||[]).map(x=>x.url).join(', ');
           addBubble('Arquivos recebidos. Obrigado! ('+links+')','bot');
           history.push({role:'user', content:'Enviei arquivos: '+links});
-          requestAI();
-        }else{
-          addBubble('Não foi possível enviar. Tente novamente.','bot');
-        }
-      }catch(e){ addBubble('Erro no upload. Tente novamente.','bot'); }
+          askAI();
+        } else { addBubble('Não foi possível enviar. Tente novamente.','bot'); }
+      } catch(e){ addBubble('Erro no upload. Tente novamente.','bot'); }
       finally{ fileIn.value=''; }
     });
   </script>
