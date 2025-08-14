@@ -1,167 +1,245 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Queimadas Telemedicina — Recepção</title>
   <style>
-    :root{ --bg:#0f2e46; --ink:#0b2233; --muted:#5b6b79; --green:#157347; --soft:#f4f7fb; }
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--soft);color:var(--ink)}
-    header{background:var(--bg);color:#fff}
-    .wrap{max-width:980px;margin:0 auto;padding:12px}
-    .brandbar{display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px;padding:8px;margin:6px 0 10px}
-    .brandbar img{max-height:74px;height:auto;display:block}
-    h1{margin:6px 0 0 0;text-align:center}
-    main{max-width:980px;margin:16px auto;padding:0 12px 40px}
-    .card{background:#fff;border:1px solid #e6eef4;border-radius:12px;box-shadow:0 6px 16px rgba(12,34,56,.06);padding:14px}
-    #chat{height:52vh;min-height:340px;border:1px solid #e6eef4;border-radius:12px;overflow:auto;padding:10px;background:#fff}
-    .row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
-    input[type=text]{flex:1;padding:10px 12px;border:1px solid #cfe0ec;border-radius:10px}
-    button{border:none;border-radius:10px;padding:10px 14px;font-weight:700;background:var(--green);color:#fff}
-    .muted{color:var(--muted);font-size:13px;margin-top:8px}
-    /* Bubbles */
-    .bubble{margin:6px 0;padding:10px 12px;border-radius:12px;border:1px solid #e6eef4;max-width:92%}
-    .u{background:#e7f3ff;margin-left:auto}
-    .b{background:#f7fafc;margin-right:auto}
-    .typing{display:inline-flex;gap:6px;align-items:center}
-    .dot{width:8px;height:8px;border-radius:50%;background:#9db3c7;animation:bl 1.2s infinite ease-in-out}
-    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
-    @keyframes bl{0%,80%,100%{opacity:.3}40%{opacity:1}}
-    /* CPF overlay */
-    .cpf-overlay{position:fixed;inset:0;background:rgba(14,30,45,.72);display:none;align-items:center;justify-content:center;z-index:9999}
-    .cpf-card{background:#fff;border-radius:16px;padding:18px 16px;width:min(92vw,520px);box-shadow:0 10px 30px rgba(3,22,37,.25)}
-    .cpf-card h3{margin:0 0 10px}
-    .cpf-card p{margin:6px 0;color:#334e68}
-    .cpf-row{display:flex;gap:10px;margin-top:12px}
-    .cpf-input{flex:1;padding:12px 14px;border:1px solid #cfe0ec;border-radius:12px;font-size:16px}
-    .cpf-btn{background:#0f2e46;color:#fff;border:none;border-radius:12px;padding:12px 16px;font-weight:700}
-    .cpf-warn{background:#fff3cd;border:1px solid #ffe08a;color:#664d03;padding:10px 12px;border-radius:10px;margin-top:10px}
-    .error{border-color:#e11d48!important;outline:2px solid #fee2e2}
-    footer{max-width:980px;margin:16px auto 28px;padding:0 12px;text-align:center}
-    .partner{background:#fff;border:1px solid #e6eef4;border-radius:12px;padding:10px}
-    .partner img{max-height:54px;height:auto}
+    :root{
+      --azul:#0f3446; --azul2:#154f66; --cinza:#eef3f7; --borda:#d9e5ee; --verde:#127c52;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+         background:var(--cinza);color:#0a0a0a}
+    header{background:var(--azul); color:#fff; padding:26px 16px; text-align:center; position:sticky; top:0; z-index:10}
+    header .row{display:flex; align-items:center; justify-content:center; gap:12px}
+    header img{height:48px; object-fit:contain}
+    header h1{margin:6px 0 0;font-size:1.8rem; font-weight:800; letter-spacing:.3px}
+    main{max-width:920px;margin:24px auto;padding:0 16px}
+    .card{background:#fff;border:1px solid var(--borda);border-radius:16px;box-shadow:0 10px 24px rgba(15,52,70,.06);padding:16px}
+    .bubble{background:#f5fbff;border:1px solid var(--borda);border-radius:12px;padding:16px;color:#0a2733}
+    textarea{width:100%;min-height:420px;border:1px solid var(--borda);border-radius:16px;padding:16px;margin:10px 0 12px; outline:none}
+    .input-row{display:flex; gap:12px; align-items:center}
+    .input-row input{flex:1;border:1px solid var(--borda);border-radius:14px;padding:14px 16px;outline:none}
+    .btn{background:var(--verde);border:none;border-radius:12px;color:#fff;padding:14px 18px;font-weight:700;cursor:pointer}
+    .btn.secondary{background:#0f3446}
+    footer{margin:56px 0 24px; text-align:center; opacity:.9}
+    footer img{height:36px; object-fit:contain}
+    .tag{display:inline-block;margin:.25rem; padding:.5rem .75rem;border-radius:999px;border:1px solid var(--borda);background:#fff;cursor:pointer}
+    .tag.active{background:#e8f7ff;border-color:#9ed6f5}
+    .pillbar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+    /* CPF modal */
+    .modal{position:fixed;inset:0;background:rgba(6,16,24,.55);display:none;align-items:center;justify-content:center;z-index:50}
+    .modal.show{display:flex}
+    .sheet{background:#fff;border-radius:18px;max-width:680px;width:94vw;border:1px solid var(--borda);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    .sheet header{background:#fff;color:#0a0a0a;padding:18px 20px;border-bottom:1px solid var(--borda);position:unset}
+    .sheet h2{margin:0 0 6px;font-size:1.35rem}
+    .sheet .warn{background:#fff4cf;border:1px solid #f0d78b;padding:12px 14px;border-radius:12px;margin:8px 0 12px}
+    .sheet .body{padding:12px 20px 20px}
+    .sheet input{width:100%; border:1px solid var(--borda); border-radius:12px; padding:14px 16px; font-size:1.05rem}
+    .sheet .actions{display:flex; gap:12px; justify-content:flex-end; margin-top:14px}
+    .banner{max-width:920px;margin:10px auto;padding:10px 14px;border-radius:10px;border:1px solid #ffd6a8;background:#fff7ed;color:#6a3b00}
+    .typing{font-size:.95rem;color:#3a5561;margin:8px 0 14px;display:none}
+    .typing.show{display:block}
   </style>
 </head>
 <body>
   <header>
-    <div class="wrap">
-      <div class="brandbar">
-        <img src="img/logo-queimadas.png" alt="Prefeitura de Queimadas" onerror="this.style.display='none'">
-      </div>
+    <div class="row">
+      <img src="img/logo-queimadas.png" alt="Queimadas" onerror="this.style.display='none'">
       <h1>Queimadas Telemedicina — Recepção</h1>
     </div>
   </header>
 
+  <div id="expiredBanner" class="banner" style="display:none">Sua sessão anterior foi encerrada por inatividade.</div>
+
   <main>
-    <div class="card">
-      <div id="chat" aria-live="polite"></div>
-      <div class="row">
-        <input id="msg" type="text" placeholder="Digite aqui..." autocomplete="off">
-        <button id="send" type="button">Enviar</button>
+    <section class="card">
+      <div class="bubble">Bem-vindo(a)! Digite sua mensagem para iniciar sua consulta.</div>
+
+      <div id="typing" class="typing">Recepcionista digitando…</div>
+
+      <textarea id="msg" placeholder=""></textarea>
+      <div class="input-row">
+        <input id="quick" placeholder="Digite aqui…" />
+        <button id="send" class="btn">Enviar</button>
       </div>
-      <div class="muted">Para segurança, sua sessão expira após alguns minutos sem atividade.</div>
-    </div>
+
+      <div style="margin:10px 0 6px; color:#4a5d66">Para segurança, sua sessão expira após alguns minutos sem atividade.</div>
+
+      <div id="docsArea" style="display:none">
+        <h3 style="margin:18px 0 6px">Documentos disponíveis para este CPF</h3>
+        <div id="docsBar" class="pillbar"></div>
+      </div>
+
+      <div style="margin:18px 0 6px; font-weight:700">Especialidade</div>
+      <div id="specs" class="pillbar"></div>
+    </section>
   </main>
 
   <footer>
-    <div class="partner">
-      <img src="img/logo-atendemais.png" alt="Atende+" onerror="this.style.display='none'">
-    </div>
+    <img src="img/logo-atendemais.png" alt="Atende+" onerror="this.style.display='none'">
   </footer>
 
-  <!-- CPF Gate embutido -->
-  <div id="cpfGate" class="cpf-overlay">
-    <div class="cpf-card">
-      <h3>Antes de começar, informe seu CPF</h3>
-      <p>O CPF é vinculado ao seu prontuário eletrônico. <b>Não utilize o CPF de outra pessoa.</b></p>
-      <div class="cpf-warn">O uso do mesmo CPF por pessoas diferentes pode gerar erros na prescrição, porque o sistema considera o histórico de consultas anteriores para a triagem.</div>
-      <div class="cpf-row">
-        <input class="cpf-input" id="cpfInput" type="text" inputmode="numeric" placeholder="CPF (apenas números)" maxlength="14" aria-label="CPF">
-        <button class="cpf-btn" id="cpfOk" type="button">Continuar</button>
+  <!-- CPF Modal -->
+  <div class="modal" id="cpfModal" role="dialog" aria-modal="true" aria-labelledby="cpfTitle">
+    <div class="sheet">
+      <header>
+        <h2 id="cpfTitle">Antes de começar, informe seu CPF</h2>
+        <div>O CPF é vinculado ao seu prontuário eletrônico. <b>Não utilize o CPF de outra pessoa.</b></div>
+      </header>
+      <div class="body">
+        <div class="warn">
+          O uso do mesmo CPF por pessoas diferentes pode gerar erros na prescrição, porque o sistema considera
+          o histórico de consultas anteriores para a triagem.
+        </div>
+        <input id="cpfInput" inputmode="numeric" pattern="[0-9]*" placeholder="Apenas números" maxlength="14">
+        <div class="actions">
+          <button id="cpfOk" class="btn secondary">Continuar</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ====== Utils ======
-    const chat = document.getElementById('chat');
-    const msg = document.getElementById('msg');
-    const send = document.getElementById('send');
+    // -------- CONFIG --------
+    const DEFAULT_API = "https://remedy-queimadas-api.onrender.com";
+    const API_BASE = window.API_BASE || DEFAULT_API;
 
-    function bubble(role, html){
-      const d = document.createElement('div');
-      d.className = 'bubble ' + (role==='user' ? 'u' : 'b');
-      d.innerHTML = html;
-      chat.appendChild(d);
-      chat.scrollTop = chat.scrollHeight;
-      return d;
-    }
-    function typing(){
-      const d = document.createElement('div');
-      d.className = 'bubble b'; d.style.width='90px';
-      d.innerHTML = '<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
-      chat.appendChild(d);
-      chat.scrollTop = chat.scrollHeight;
-      return ()=>{ d.remove(); };
-    }
-    function receptionistSay(text){
-      const words = String(text).split(/\s+/).filter(Boolean).length;
-      const delay = Math.max(600, Math.round(words*2300)); // ~2.3s por palavra, com mínimo
-      const stop = typing();
-      setTimeout(()=>{ stop(); bubble('bot', text); }, delay);
-    }
+    // -------- UTIL --------
+    const $ = sel => document.querySelector(sel);
+    const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+    const onlyDigits = s => (s||"").replace(/\D+/g, "");
 
-    // Mensagem inicial
-    receptionistSay('Bem-vindo(a)! Digite sua mensagem para iniciar sua consulta.');
+    // expired banner via querystring
+    const params = new URLSearchParams(location.search);
+    if(params.get("reason")==="expired"){ $("#expiredBanner").style.display="block"; }
 
-    send.addEventListener('click', ()=>{
-      const t = (msg.value||'').trim();
-      if (!t) return;
-      bubble('user', t);
-      msg.value = '';
-      receptionistSay('Recepção: obrigado! Vou preparar sua sala com o médico e te avisar por aqui.'); // placeholder
+    // specialties (you can tune names without changing logic)
+    const ESPECIALIDADES = ["Clínico Geral","Pediatria","Ginecologia","Dermatologia","Cardiologia","Psiquiatria","Ortopedia","Neurologia"];
+    const specsEl = $("#specs");
+    ESPECIALIDADES.forEach(name=>{
+      const a = document.createElement("button");
+      a.className = "tag"; a.textContent = name;
+      a.onclick = ()=> selectSpec(name, a);
+      specsEl.appendChild(a);
     });
-    msg.addEventListener('keydown', (e)=>{ if(e.key==='Enter') send.click(); });
 
-    // ====== CPF GATE (à prova de iOS/Safari) ======
-    (function(){
-      const gate  = document.getElementById('cpfGate');
-      const input = document.getElementById('cpfInput');
-      const ok    = document.getElementById('cpfOk');
+    let cpf = sessionStorage.getItem("cpf") || "";
+    // modal control
+    const modal = $("#cpfModal");
+    const cpfInput = $("#cpfInput");
+    const cpfOk = $("#cpfOk");
 
-      function digits(s){ return String(s||'').replace(/\D/g,''); }
-      function fmt(v){
-        const d = digits(v).slice(0,11);
-        return d.replace(/(\d{3})(\d)/,'$1.$2')
-                .replace(/(\d{3})\.(\d{3})(\d)/,'$1.$2.$3')
-                .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/,'$1.$2.$3-$4');
-      }
-      function saveCPF(cpf){
-        try{
-          const cur = JSON.parse(sessionStorage.getItem('reimed_patient')||'{}');
-          cur.cpf = cpf;
-          sessionStorage.setItem('reimed_patient', JSON.stringify(cur));
-        }catch(e){
-          sessionStorage.setItem('reimed_patient', JSON.stringify({cpf}));
-        }
-      }
-      function showGate(){ gate.style.display = 'flex'; }
-      function hideGate(){ gate.style.display = 'none'; gate.remove(); }
-      function validateAndClose(){
-        const d = digits(input.value);
-        if (d.length !== 11){ input.classList.add('error'); input.focus(); return false; }
-        input.classList.remove('error'); saveCPF(d); hideGate(); return true;
-      }
-      input.addEventListener('input', ()=>{ input.value = fmt(input.value); });
-      input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') ok.click(); });
-      ok.addEventListener('click', validateAndClose);
+    function showCPFModal(){
+      modal.classList.add("show");
+      setTimeout(()=>cpfInput.focus(), 50);
+    }
+    function hideCPFModal(){
+      modal.classList.remove("show");
+    }
 
+    function isCPFValid(v){
+      const s = onlyDigits(v);
+      return s.length>=11; // regra simples (validação completa pode ser aplicada no backend)
+    }
+
+    async function precheckDocs(){
+      // tenta buscar docs aprovados para o CPF informado
       try{
-        const p = JSON.parse(sessionStorage.getItem('reimed_patient')||'null');
-        const cpf = p && digits(p.cpf);
-        if (cpf && cpf.length===11){ hideGate(); } else { showGate(); setTimeout(()=>input.focus({preventScroll:true}), 80); }
-      }catch(e){ showGate(); setTimeout(()=>input.focus({preventScroll:true}), 80); }
-    })();
+        const r = await fetch(`${API_BASE}/docs?cpf=${encodeURIComponent(cpf)}&status=approved`, {mode:"cors"});
+        if(!r.ok) throw new Error("fail");
+        const list = await r.json(); // esperado: [{id,type,title,url}] — se sua API divergir, ajuste aqui.
+        const bar = $("#docsBar"); bar.innerHTML = "";
+        if(Array.isArray(list) && list.length){
+          $("#docsArea").style.display = "block";
+          list.forEach(doc=>{
+            const pill = document.createElement("a");
+            pill.className="tag active"; pill.textContent = (doc.title||`Documento #${doc.id}`);
+            pill.href = doc.url || `${API_BASE}/docs/${doc.id}/download`; pill.target="_blank";
+            bar.appendChild(pill);
+          });
+        }else{
+          $("#docsArea").style.display = "none";
+        }
+      }catch(e){
+        // silencioso: se a API não responder, apenas não mostra nada
+        $("#docsArea").style.display = "none";
+      }
+    }
+
+    // entrada
+    if(!isCPFValid(cpf)){
+      showCPFModal();
+    }else{
+      precheckDocs();
+    }
+
+    cpfOk.addEventListener("click", async ()=>{
+      const v = onlyDigits(cpfInput.value);
+      if(!isCPFValid(v)){
+        cpfInput.focus(); cpfInput.select();
+        cpfInput.style.borderColor = "#ef4444";
+        setTimeout(()=>cpfInput.style.borderColor = "", 800);
+        return;
+      }
+      cpf = v;
+      sessionStorage.setItem("cpf", cpf);
+      hideCPFModal();
+      await sleep(150);
+      precheckDocs();
+      typeReception("Obrigada! Seu CPF foi vinculado à sessão. Se você tiver documentos aprovados, eles aparecem acima.");
+    });
+
+    // typing simulation
+    function typeReception(text){
+      const t = $("#typing");
+      t.classList.add("show");
+      setTimeout(()=>{
+        t.classList.remove("show");
+      }, 1600);
+      // Apenas ornamental, textarea é livre para você usar como rascunho
+    }
+
+    // select specialty and handshake → medico.html
+    async function selectSpec(name, btn){
+      // marca visual
+      [...document.querySelectorAll(".tag")].forEach(el=>el.classList.remove("active"));
+      btn.classList.add("active");
+
+      typeReception(`Certo. Preparando sua sala de ${name.toLowerCase()}…`);
+      // handshake com backend (opcional; se falhar, criamos token local)
+      let token = null;
+      try{
+        const r = await fetch(`${API_BASE}/handshake`, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({cpf, specialty:name})
+        });
+        if(!r.ok) throw new Error("fail");
+        const data = await r.json();
+        token = data && (data.token || data.consult_token);
+      }catch(e){
+        // fallback local
+        token = `local_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      }
+      sessionStorage.setItem("consult_token", token);
+      sessionStorage.setItem("specialty", name);
+      sessionStorage.setItem("cpf", cpf);
+
+      // vai para o médico
+      await sleep(800);
+      location.href = "medico.html";
+    }
+
+    // envio de mensagem (ornamental aqui)
+    $("#send").addEventListener("click", ()=>{
+      const v = $("#quick").value.trim();
+      if(!v) return;
+      typeReception("Recebi sua mensagem, obrigado!");
+      $("#quick").value = "";
+    });
   </script>
 </body>
 </html>
