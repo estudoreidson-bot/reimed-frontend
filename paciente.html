@@ -28,6 +28,7 @@ const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-ap
     body:JSON.stringify({specialty})
   }).then(r=>r.json()).then(d=>{
     localStorage.setItem('sessionId', d.sessionId||'');
+localStorage.setItem('sessionStart', String(Date.now()));
     location.replace('medico.html');
   }).catch(()=>{
     // mesmo que a API caia, segue para a sala (o médico vai avisar erro)
