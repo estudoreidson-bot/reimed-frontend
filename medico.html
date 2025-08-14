@@ -73,7 +73,13 @@
   <script>
     // ====== Config ======
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
-    const ESPECIALIDADE = new URLSearchParams(location.search).get("especialidade") || "Clínico Geral";
+// Sessão & segurança
+const MAX_IDLE_MS = 3*60*1000;
+const sessionId = localStorage.getItem("sessionId") || "";
+const cameFromReception = localStorage.getItem("cameFromReception") === "1";
+const sessionStart = parseInt(localStorage.getItem("sessionStart")||"0",10) || 0;
+const especialidadeLS = localStorage.getItem("especialidade") || "";
+    const ESPECIALIDADE = (especialidadeLS || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
 
     // ====== Estado ======
     const chat = document.getElementById("chat");
@@ -82,27 +88,43 @@
     const fileInput = document.getElementById("file");
 
     const historico = []; // {role, content}
+let caseClosed=false;
     let indicador;
 
     function addMsg(role, text){
+  try{ const cid = localStorage.getItem('consultId'); if(cid){ fetch(API_BASE+'/history/msg',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ consultId: cid, role, content: text })}); } }catch(_e){}
+
       const div = document.createElement("div");
       div.className = "msg " + (role === "assistant" ? "m-med" : "m-user");
-      div.textContent = text;
+      div.textContent = displayText;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
 
-      // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
-      try{
-        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
-          const pacienteNome = localStorage.getItem('pacienteNome') || "";
-          const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
-        }
-      }catch(_e){}
+// Remoção de assinatura/status no chat do paciente
+let displayText = text;
+const assinaturaRe = /\*?Assinatura digital:.*?(\n|$)/i;
+const statusRe = /\[STATUS:[^\]]*\]/i;
+const temAss = assinaturaRe.test(text);
+const temStatus = statusRe.test(text);
+if(temAss) displayText = displayText.replace(assinaturaRe, "");
+if(temStatus) displayText = displayText.replace(statusRe, "");
+
+
+// Enfileirar uma única vez por sessão
+try{
+  const key = "docSent:"+(localStorage.getItem("sessionId")||"");
+  const jaEnviado = sessionStorage.getItem(key)==="1";
+  if(role==="assistant" && temStatus && !jaEnviado){
+    const pacienteNome = localStorage.getItem('pacienteNome')||"";
+    const pacienteCPF = (localStorage.getItem('pacienteCPF')||"").replace(/\D/g,"");
+    let conteudo = text;
+    if(!temAss){ conteudo = conteudo.replace(/\s*$/, "\nAssinatura digital: aguardando validação do médico humano\n"); }
+    if(!temStatus){ conteudo += "[STATUS: aguardando receita]"; }
+    fetch(API_BASE+"/admin/docs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tipo:"receita",pacienteNome,pacienteCPF,conteudo})})
+      .then(()=>sessionStorage.setItem(key,"1")).catch(()=>{});
+  }
+}catch(e){}
+
     }
     function status(txt){
       clearStatus();
@@ -111,19 +133,6 @@
       indicador.textContent = txt;
       chat.appendChild(indicador);
       chat.scrollTop = chat.scrollHeight;
-
-      // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
-      try{
-        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
-          const pacienteNome = localStorage.getItem('pacienteNome') || "";
-          const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
-        }
-      }catch(_e){}
     }
     function clearStatus(){
       if (indicador && indicador.parentNode){
@@ -133,16 +142,14 @@
     function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
     async function pensandoEDigitando(texto){
-  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 10;
-  const pensarMin = 15000, pensarMax = 30000;
-  const pensar = Math.floor(pensarMin + Math.random()*(pensarMax - pensarMin));
-  status("Médico pensando…");
-  await delay(pensar);
-  const typePerWord = 2300;
-  const digitar = Math.max(6900, Math.round(words * typePerWord));
-  status("Médico digitando…");
-  await delay(digitar);
-}
+      const chars = Math.max(10, String(texto||"").length);
+      const pensar = Math.min(6000, Math.max(2500, Math.round(chars * 30)));
+      status("Médico pensando…");
+      await delay(pensar);
+      status("Médico digitando…");
+      await delay(Math.min(3500, Math.max(1200, Math.round(chars * 15))));
+      clearStatus();
+    }
 
     async function acordarServidor(){
       const ctrl = new AbortController();
@@ -170,6 +177,9 @@
     }
 
     async function enviarTexto(){
+  if(Date.now() - (window.__lastActivity||Date.now()) > MAX_IDLE_MS){ alert("Sessão expirada. Voltando para a recepção."); location.replace("receptionist.html"); return; }
+  if(caseClosed){ historico.push({role:"system", content:"Caso encerrado: responder somente dúvidas sobre a doença atual e medicamentos. Não gerar nova receita, exceto se for solicitado TROCA DE RECEITA."}); }
+
       const txt = (input.value || "").trim();
       if(!txt) return;
       historico.push({ role:"user", content: txt });
