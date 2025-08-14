@@ -17,7 +17,7 @@
     button{border:none;border-radius:10px;padding:10px 14px;font-weight:700;background:#117a51;color:#fff}
     .muted{color:var(--muted);font-size:13px;margin-top:8px}
     /* CPF overlay */
-    .cpf-overlay{position:fixed;inset:0;background:rgba(14,30,45,.72);display:flex;align-items:center;justify-content:center;z-index:9999}
+    .cpf-overlay{position:fixed;inset:0;background:rgba(14,30,45,.72);display:none;align-items:center;justify-content:center;z-index:9999}
     .cpf-card{background:#fff;border-radius:16px;padding:18px 16px;width:min(92vw,520px);box-shadow:0 10px 30px rgba(3,22,37,.25)}
     .cpf-card h3{margin:0 0 10px}
     .cpf-card p{margin:6px 0;color:#334e68}
@@ -25,6 +25,7 @@
     .cpf-input{flex:1;padding:12px 14px;border:1px solid #cfe0ec;border-radius:12px;font-size:16px}
     .cpf-btn{background:#0f2e46;color:#fff;border:none;border-radius:12px;padding:12px 16px;font-weight:700}
     .cpf-warn{background:#fff3cd;border:1px solid #ffe08a;color:#664d03;padding:10px 12px;border-radius:10px;margin-top:10px}
+    .error{border-color:#e11d48!important;outline:2px solid #fee2e2}
   </style>
 </head>
 <body>
@@ -42,13 +43,13 @@
   </main>
 
   <!-- CPF Gate embutido -->
-  <div id="cpfGate" class="cpf-overlay" hidden>
+  <div id="cpfGate" class="cpf-overlay">
     <div class="cpf-card">
       <h3>Antes de começar, informe seu CPF</h3>
       <p>O CPF é vinculado ao seu prontuário eletrônico. <b>Não utilize o CPF de outra pessoa.</b></p>
       <div class="cpf-warn">O uso do mesmo CPF por pessoas diferentes pode gerar erros na prescrição, porque o sistema considera o histórico de consultas anteriores para a triagem.</div>
       <div class="cpf-row">
-        <input class="cpf-input" id="cpfInput" type="text" inputmode="numeric" placeholder="CPF (apenas números)" maxlength="14">
+        <input class="cpf-input" id="cpfInput" type="text" inputmode="numeric" placeholder="CPF (apenas números)" maxlength="14" aria-label="CPF">
         <button class="cpf-btn" id="cpfOk" type="button">Continuar</button>
       </div>
     </div>
@@ -58,15 +59,18 @@
     // Backend para features de recepção (se necessário)
     window.API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
 
-    // ====== CPF GATE ======
+    // ====== CPF GATE (robusto para iOS/Safari) ======
     (function(){
-      const gate = document.getElementById('cpfGate');
+      const gate  = document.getElementById('cpfGate');
       const input = document.getElementById('cpfInput');
-      const ok = document.getElementById('cpfOk');
+      const ok    = document.getElementById('cpfOk');
+
       function digits(s){ return String(s||'').replace(/\\D/g,''); }
       function fmt(v){
         const d = digits(v).slice(0,11);
-        return d.replace(/(\\d{3})(\\d)/,'$1.$2').replace(/(\\d{3})\\.(\\d{3})(\\d)/,'$1.$2.$3').replace(/(\\d{3})\\.(\\d{3})\\.(\\d{3})(\\d)/,'$1.$2.$3-$4');
+        return d.replace(/(\\d{3})(\\d)/,'$1.$2')
+                .replace(/(\\d{3})\\.(\\d{3})(\\d)/,'$1.$2.$3')
+                .replace(/(\\d{3})\\.(\\d{3})\\.(\\d{3})(\\d)/,'$1.$2.$3-$4');
       }
       function saveCPF(cpf){
         try{
@@ -77,24 +81,41 @@
           sessionStorage.setItem('reimed_patient', JSON.stringify({cpf}));
         }
       }
-      function check(){
-        try{
-          const p = JSON.parse(sessionStorage.getItem('reimed_patient')||'null');
-          const cpf = p && digits(p.cpf);
-          if (cpf && cpf.length===11){ gate.hidden = true; return; }
-          gate.hidden = false;
-        }catch(e){ gate.hidden = false; }
+      function showGate(){ gate.style.display = 'flex'; }
+      function hideGate(){
+        // remove overlay de forma definitiva para evitar qualquer interceptação
+        gate.style.display = 'none';
+        gate.remove();
       }
-      input.addEventListener('input', ()=> input.value = fmt(input.value));
-      ok.addEventListener('click', ()=>{
+      function validateAndClose(){
         const d = digits(input.value);
-        if (d.length!==11){ input.focus(); input.select?.(); return; }
-        saveCPF(d); gate.hidden = true;
-      });
-      check();
+        if (d.length !== 11){
+          input.classList.add('error'); input.focus(); return false;
+        }
+        input.classList.remove('error');
+        saveCPF(d);
+        hideGate();
+        return true;
+      }
+
+      // Máscara e atalhos
+      input.addEventListener('input', ()=>{ input.value = fmt(input.value); });
+      input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') ok.click(); });
+
+      ok.addEventListener('click', validateAndClose);
+
+      // Inicialização
+      try{
+        const p = JSON.parse(sessionStorage.getItem('reimed_patient')||'null');
+        const cpf = p && digits(p.cpf);
+        if (cpf && cpf.length===11){ hideGate(); }
+        else{ showGate(); input.focus({preventScroll:true}); }
+      }catch(e){
+        showGate(); input.focus({preventScroll:true});
+      }
     })();
 
-    // ====== Mock de chat da recepção (mantém IDs simples) ======
+    // ====== Mock de chat da recepção ======
     const chat = document.getElementById('chat');
     const msg = document.getElementById('msg');
     const send = document.getElementById('send');
