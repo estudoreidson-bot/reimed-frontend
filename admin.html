@@ -1,142 +1,126 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Área do Médico Administrador</title>
   <style>
-    :root{--azul:#0f3446;--borda:#d9e5ee;--cinza:#f4f7fb;--verde:#127c52}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--cinza)}
-    header{background:var(--azul);color:#fff;padding:22px 16px}
-    header .row{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:14px}
-    header img{height:44px;object-fit:contain}
-    header h1{margin:0;font-size:1.5rem}
-    main{max-width:1100px;margin:22px auto;padding:0 16px}
-    .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-    input, button, select{border:1px solid var(--borda);border-radius:10px;padding:10px 12px}
-    button{background:var(--azul);color:#fff;border:none;cursor:pointer}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
-    .kpi{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:12px;text-align:center}
-    .kpi b{font-size:1.4rem;display:block;margin-top:6px}
-    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--borda);border-radius:12px;overflow:hidden}
-    th,td{padding:10px;border-bottom:1px solid var(--borda);font-size:.95rem}
-    th{background:#f8fbff;text-align:left}
-    td .btn{background:#0f3446;color:#fff;border:none;border-radius:8px;padding:6px 10px;margin:2px;cursor:pointer}
-    .right{margin-left:auto}
+    :root { --azul:#0f3144; --borda:#e1e7ee; --cinza:#f5f9fc; --verde:#157347; --pill:#eef6ff; }
+    body { margin:0; background:var(--cinza); font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Arial; }
+    header { background:var(--azul); color:#fff; padding:14px 18px; display:flex; gap:12px; align-items:center; justify-content:center }
+    header img {height:42px}
+    main { max-width:1100px; margin:18px auto; padding:0 12px; }
+    .grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:14px }
+    .kpi { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:12px }
+    .kpi b { font-size:22px }
+    .card { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:12px }
+    table { width:100%; border-collapse:collapse }
+    th, td { padding:10px; border-bottom:1px solid var(--borda); text-align:left; font-size:14px }
+    .pill { background:var(--pill); padding:6px 10px; border-radius:999px; font-size:12px; }
+    .actions button { margin-right:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--borda); background:#fff; cursor:pointer }
+    .actions .ok { background:var(--verde); color:#fff; border-color:var(--verde) }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 }
+    input, button, select { padding:8px 10px; border:1px solid var(--borda); border-radius:8px }
+    button.primary { background:var(--azul); color:#fff; border-color:var(--azul) }
   </style>
 </head>
 <body>
-<header>
-  <div class="row">
-    <img src="img/logo-queimadas.png" onerror="this.style.display='none'"/>
-    <h1>Área do Médico Administrador</h1>
-    <span class="right"></span>
-    <button onclick="logout()">Sair</button>
-  </div>
-</header>
+  <header>
+    <img src="img/logo-queimadas.png" onerror="this.style.display='none'">
+    <h2>Área do Médico Administrador</h2>
+  </header>
+  <main>
+    <div class="toolbar">
+      <input id="cpf" placeholder="Buscar histórico por CPF (apenas números)" />
+      <button id="buscar">Buscar histórico</button>
+      <input id="ini" type="date" />
+      <input id="fim" type="date" />
+      <button id="pdfs">Imprimir PDFs do período</button>
+    </div>
 
-<main>
-  <div class="bar">
-    <label>Período inicial <input type="date" id="dini"></label>
-    <label>Período final <input type="date" id="dfim"></label>
-    <button onclick="loadDocs()">Buscar</button>
-    <button onclick="printPeriod()">Imprimir PDFs do período</button>
-  </div>
+    <div class="grid">
+      <div class="kpi">Total<br><b id="k_total">0</b></div>
+      <div class="kpi">Pendentes<br><b id="k_pend">0</b></div>
+      <div class="kpi">Aprovados<br><b id="k_aprv">0</b></div>
+      <div class="kpi">Rejeitados<br><b id="k_rej">0</b></div>
+    </div>
 
-  <div class="grid">
-    <div class="kpi">Total<b id="kTotal">0</b></div>
-    <div class="kpi">Pendentes<b id="kPend">0</b></div>
-    <div class="kpi">Aprovados<b id="kAprov">0</b></div>
-    <div class="kpi">Rejeitados<b id="kRej">0</b></div>
-  </div>
-
-  <table id="tbl">
-    <thead>
-      <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</main>
+    <div class="card">
+      <table id="tbl">
+        <thead>
+          <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
 
 <script>
-  const DEFAULT_API = "https://remedy-queimadas-api.onrender.com";
-  const API_BASE = window.API_BASE || DEFAULT_API;
+(() => {
+  const API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
+  const el = (id) => document.getElementById(id);
+  const T = el('tbl').querySelector('tbody');
 
-  const $ = s=>document.querySelector(s);
-
-  function logout(){
-    location.href = "index.html";
+  async function load() {
+    try {
+      const r = await fetch(API_BASE + '/api/admin/docs');
+      const data = await r.json();
+      fill(data||[]);
+    } catch (e) { fill([]); }
   }
 
-  async function loadDocs(){
-    const dini = $("#dini").value, dfim = $("#dfim").value;
-    let url = `${API_BASE}/admin/docs`;
-    const qs = [];
-    if(dini) qs.push(`from=${dini}`);
-    if(dfim) qs.push(`to=${dfim}`);
-    if(qs.length) url += `?${qs.join("&")}`;
-
-    let list = [];
-    try{
-      const r = await fetch(url, {mode:"cors"});
-      if(!r.ok) throw new Error("fail");
-      list = await r.json();
-    }catch(e){
-      // fallback: lista vazia
-      list = [];
-    }
-    const tb = $("#tbl tbody"); tb.innerHTML = "";
-    let total=0, pend=0, aprov=0, rej=0;
-    list.forEach(doc=>{
-      total++;
-      if(doc.status==="pendente") pend++;
-      else if(doc.status==="aprovado") aprov++;
-      else if(doc.status==="rejeitado") rej++;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${doc.id||"-"}</td>
-        <td>${doc.patient_name||"-"}</td>
-        <td>${doc.cpf||"-"}</td>
-        <td>${doc.type||"receita"}</td>
-        <td>${doc.status||"pendente"}</td>
-        <td>${doc.created_at||"-"}</td>
-        <td>
-          <button class="btn" onclick="viewDoc(${doc.id})">Ver/Editar</button>
-          <button class="btn" onclick="approveDoc(${doc.id})">Aprovar</button>
-          <button class="btn" onclick="rejectDoc(${doc.id})">Rejeitar</button>
-          <button class="btn" onclick="printDoc(${doc.id})">Imprimir</button>
+  function fill(rows) {
+    const k = {total:0, pend:0, aprv:0, rej:0};
+    T.innerHTML = '';
+    rows.forEach(d => {
+      k.total++;
+      if (d.status==='pendente') k.pend++; else if (d.status==='aprovado') k.aprv++; else if (d.status==='rejeitado') k.rej++;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${d.id||'-'}</td>
+        <td>${d.paciente||'-'}</td>
+        <td>${d.cpf||'-'}</td>
+        <td>${d.tipo||'receita'}</td>
+        <td><span class="pill">${d.status||'-'}</span></td>
+        <td>${d.data||''}</td>
+        <td class="actions">
+          <button data-act="ver" data-id="${d.id}">Ver/Editar</button>
+          <button class="ok" data-act="aprov" data-id="${d.id}">Aprovar</button>
+          <button data-act="rej" data-id="${d.id}">Rejeitar</button>
+          <button data-act="print" data-id="${d.id}">Imprimir</button>
         </td>`;
-      tb.appendChild(tr);
+      T.appendChild(tr);
     });
-    $("#kTotal").textContent = total;
-    $("#kPend").textContent = pend;
-    $("#kAprov").textContent = aprov;
-    $("#kRej").textContent = rej;
+    document.getElementById('k_total').textContent=k.total;
+    document.getElementById('k_pend').textContent=k.pend;
+    document.getElementById('k_aprv').textContent=k.aprv;
+    document.getElementById('k_rej').textContent=k.rej;
   }
 
-  function printPeriod(){
-    window.print();
-  }
+  document.getElementById('buscar').addEventListener('click', async () => {
+    const cpf = (document.getElementById('cpf').value||'').replace(/\D+/g,'');
+    if (!cpf) return;
+    try {
+      const r = await fetch(API_BASE + '/api/admin/history?cpf='+cpf);
+      const data = await r.json(); fill(data||[]);
+    } catch (e) { fill([]); }
+  });
 
-  async function viewDoc(id){
-    alert("Abrir editor simplificado do documento "+id+" (a UI completa continua no seu backend).");
-  }
-  async function approveDoc(id){
-    try{ await fetch(`${API_BASE}/admin/docs/${id}/approve`, {method:"POST"}); }catch(e){}
-    loadDocs();
-  }
-  async function rejectDoc(id){
-    try{ await fetch(`${API_BASE}/admin/docs/${id}/reject`, {method:"POST"}); }catch(e){}
-    loadDocs();
-  }
-  function printDoc(id){
-    window.open(`${API_BASE}/admin/docs/${id}/pdf`, "_blank");
-  }
+  T.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('button'); if (!btn) return;
+    const id = btn.dataset.id; const act = btn.dataset.act;
+    if (act==='print') { window.open(API_BASE + '/api/admin/print?id='+id, '_blank'); return; }
+    if (act==='ver') { window.open(API_BASE + '/api/admin/view?id='+id, '_blank'); return; }
+    if (act==='aprov' || act==='rej') {
+      try {
+        await fetch(API_BASE + '/api/admin/status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, status: act==='aprov'?'aprovado':'rejeitado'}) });
+        load();
+      } catch (e) { /*noop*/ }
+    }
+  });
 
-  // auto carregar ao abrir
-  loadDocs();
+  load();
+})();
 </script>
 </body>
 </html>
