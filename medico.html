@@ -12,10 +12,6 @@
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f1f5f9; color:#0b2233; }
     header { background: var(--bg); color:#fff; padding:16px 12px 10px; text-align:center; }
     .brand { max-width:980px; margin:0 auto; }
-    .banner {
-      height:86px; background:#0f2e46 url('img/banner-queimadas.jpg') center/cover no-repeat;
-      border-radius:12px; margin:4px auto 12px; max-width:980px;
-    }
     h1 { margin:0 0 4px; font-size:28px; line-height:1.2; }
     main { max-width:980px; margin:18px auto; padding:0 12px 28px; }
     .chat-card {
@@ -31,20 +27,33 @@
     .msg.bot  { margin-right: auto; background:#f7fafc; border:1px solid #e7eef5; }
     .row { display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap; }
     .row .file-btn { background:#0f2e46; color:#fff; border:none; padding:14px 18px; border-radius:12px; font-weight:600; }
-    .row input[type="text"], .row textarea {
+    .row input[type="text"] {
       flex:1; border:1px solid #cfe0ec; background:#fff; border-radius:12px; padding:12px 14px; min-height:46px;
       outline:none; font-size:16px;
     }
     .row button.send { background:#117a51; color:#fff; border:none; border-radius:12px; padding:12px 18px; font-weight:700; min-width:108px; }
     .muted { color: var(--muted); font-size:13px; margin-top:8px; }
+
     .notice { background:#fff3cd; border:1px solid #ffe08a; color:#664d03; padding:10px 12px; border-radius:10px; margin:10px 0 0; }
+    .error  { background:#fde2e1; border:1px solid #f5a7a1; color:#7d2621; padding:10px 12px; border-radius:10px; margin:14px 0; }
+
+    .overlay {
+      position:fixed; inset:0; background:rgba(14,30,45,.6); display:flex; align-items:center; justify-content:center; z-index:20;
+    }
+    .card {
+      background:#fff; border-radius:16px; padding:18px 16px; width:min(92vw, 460px);
+      box-shadow:0 10px 30px rgba(3,22,37,.25);
+      text-align:center;
+    }
+    .spinner { width:44px; height:44px; border:4px solid #e5edf4; border-top-color:#117a51; border-radius:50%; margin:0 auto 12px; animation:spin 1s linear infinite; }
+    @keyframes spin{ to { transform: rotate(360deg); } }
     .hidden { display:none !important; }
+    .btn { background:#0f2e46; color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:600; }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <div class="banner" role="img" aria-label="Queimadas - banner"></div>
       <h1>Queimadas Telemedicina</h1>
     </div>
   </header>
@@ -53,6 +62,7 @@
     <div id="redirNotice" class="notice hidden"></div>
     <div class="chat-card">
       <div id="chatBox" aria-live="polite"></div>
+      <div id="netError" class="error hidden"></div>
       <div class="row">
         <button class="file-btn" id="fileBtn" type="button">Enviar arquivo</button>
         <input id="chatInput" type="text" placeholder="Escreva sua resposta..." autocomplete="off">
@@ -62,9 +72,23 @@
     </div>
   </main>
 
+  <!-- Loader / fallback -->
+  <div id="loader" class="overlay">
+    <div class="card">
+      <div class="spinner"></div>
+      <div id="loaderText" style="font-weight:700; margin-bottom:8px;">Preparando a sala com o médico…</div>
+      <div id="loaderSub" style="color:#426079; font-size:14px">Isso leva só alguns segundos.</div>
+      <div style="margin-top:14px;">
+        <button id="goReception" class="btn" style="background:#7a1523">Voltar à recepção agora</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Você pode sobrescrever via <script> window.API_BASE = "https://seu-servico.onrender.com" </script> antes deste script.
+    // Ajuste aqui se quiser fixar o endpoint explicitamente:
+    // window.API_BASE = "https://SEU-SERVICO.onrender.com";
     window.API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
+    window.RECEPTION_PATH = window.RECEPTION_PATH || "index.html";
 
     const THREE_MIN = 3 * 60 * 1000;
     let consultId = null;
@@ -77,6 +101,11 @@
     const sendBtn = document.querySelector("#sendBtn");
     const fileBtn = document.querySelector("#fileBtn");
     const notice = document.querySelector("#redirNotice");
+    const loader = document.querySelector("#loader");
+    const loaderText = document.querySelector("#loaderText");
+    const loaderSub = document.querySelector("#loaderSub");
+    const netError = document.querySelector("#netError");
+    const goReception = document.querySelector("#goReception");
 
     function addMsg(role, text) {
       const el = document.createElement("div");
@@ -94,6 +123,17 @@
       fileBtn.disabled = !!v;
     }
 
+    function showLoader(show, text, sub) {
+      if (text) loaderText.textContent = text;
+      if (sub) loaderSub.textContent = sub;
+      loader.classList[show ? "remove" : "add"]("hidden");
+    }
+
+    function toReception(msg) {
+      if (msg) localStorage.setItem("reimed_notice", msg);
+      window.location.href = window.RECEPTION_PATH;
+    }
+
     function readReceptionNotice() {
       const n = localStorage.getItem("reimed_notice");
       if (n) {
@@ -108,27 +148,31 @@
       setDisabled(true);
       sessionStorage.removeItem("reimed_consult");
       if (redirect) {
-        localStorage.setItem("reimed_notice","Sua sessão expirou. Volte à recepção para iniciar uma nova consulta.");
-        window.location.href = "index.html";
+        toReception("Sua sessão expirou. Volte à recepção para iniciar uma nova consulta.");
       } else {
         addBot("Sessão expirada. Volte à recepção para iniciar uma nova consulta.");
       }
     }
     function refreshIdle() {
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(()=>expireSession(false), THREE_MIN);
+      idleTimer = setTimeout(()=>expireSession(true), THREE_MIN);
     }
     document.addEventListener("visibilitychange", ()=>{
       if (document.visibilityState === "visible") refreshIdle();
     });
+    goReception.addEventListener("click", ()=> toReception("Você voltou para a recepção."));
 
     async function boot() {
       readReceptionNotice();
+      setDisabled(true);
+      showLoader(true, "Preparando a sala com o médico…", "Isso leva só alguns segundos.");
       refreshIdle();
 
-      // Paciente vindo da recepção
       const p = JSON.parse(sessionStorage.getItem("reimed_patient") || "null");
-      if (!p || !p.cpf) return expireSession(true);
+      if (!p || !p.cpf) {
+        showLoader(true, "Não achei sua identificação.", "Vamos voltar à recepção para continuar.");
+        return setTimeout(()=>toReception("Identifique-se na recepção para iniciar a consulta."), 1200);
+      }
 
       patientMeta = {
         cpf: String(p.cpf).replace(/\D/g,""),
@@ -154,10 +198,15 @@
         consultId = j.consultId;
         sessionStorage.setItem("reimed_consult", JSON.stringify({ id: consultId, startedAt: Date.now() }));
 
+        // OK — entra no chat
+        showLoader(false);
         addBot("Olá! Sou o médico. Para prescrever com segurança, preciso confirmar sua idade, peso e alergias. Podemos começar?");
         setDisabled(false);
       } catch (e) {
-        expireSession(true);
+        // Mostra erro visível e volta à recepção
+        netError.classList.remove("hidden");
+        netError.textContent = "Falha ao preparar a sala com o médico. Voltaremos à recepção.";
+        setTimeout(()=>toReception("Não consegui contato com o servidor agora. Volte à recepção e tente novamente."), 1400);
       }
     }
 
@@ -171,7 +220,6 @@
 
       history.push({ role:"user", content: txt });
 
-      // tenta registrar mensagem (não bloqueia)
       if (consultId) {
         fetch(`${API_BASE}/history/msg`, {
           method: "POST",
@@ -200,8 +248,8 @@
         }
         addBot(reply);
       } catch (e) {
-        addBot("Não consegui contato com o servidor agora. Voltaremos à recepção...");
-        setTimeout(()=>expireSession(true), 1400);
+        addBot("Não consegui contato com o servidor agora. Voltaremos à recepção…");
+        setTimeout(()=>toReception("Não consegui contato com o servidor agora. Tente novamente."), 1400);
       } finally {
         setDisabled(false);
       }
