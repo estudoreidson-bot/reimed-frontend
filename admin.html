@@ -1,288 +1,237 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Área do Médico Administrador</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Médico – Queimadas Telemedicina</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    :root{
-      --bg:#0f2e46; --ok:#117a51; --danger:#7a1523; --ink:#0b2233; --muted:#5b6b79; --card:#ffffff;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f4f7fb;color:var(--ink)}
-    header{background:var(--bg);color:#fff}
-    .wrap{max-width:1100px;margin:0 auto;padding:12px}
-    .banner{height:110px;background:#0f2e46 url('img/banner-queimadas.jpg') center/cover no-repeat;border-radius:10px;margin:6px 0 10px}
-    .title{display:flex;align-items:center;justify-content:space-between}
-    .btn{border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-    .btn-plain{background:#e9f1f7;color:#133b52}
-    main{max-width:1100px;margin:12px auto;padding:0 12px}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 12px}
-    input[type=date],input[type=text]{padding:8px 10px;border:1px solid #cfe0ec;border-radius:8px}
-    .btn-blue{background:#2f6ea3;color:#fff}
-    .btn-ok{background:var(--ok);color:#fff}
-    .btn-danger{background:var(--danger);color:#fff}
-    .btn-ref{background:#6a3fb3;color:#fff}
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 12px}
-    .card{background:var(--card);border:1px solid #e6eef4;border-radius:12px;padding:12px;box-shadow:0 4px 12px rgba(10,30,50,.06)}
-    .card h3{margin:0 0 6px;font-size:14px;color:#425c6f}
-    .card .v{font-size:20px;font-weight:800}
-    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e6eef4;border-radius:12px;overflow:hidden}
-    th,td{padding:10px;border-bottom:1px solid #eef4f8;font-size:14px}
-    th{background:#f7fbff;text-align:left;color:#35556e}
-    .row-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px}
-    .b-pendente{background:#fff4d6;color:#5d4906}
-    .b-aprovado{background:#e8fff3;color:#0c5f3b}
-    .b-rejeitado{background:#ffe8e6;color:#7a1523}
-    /* Modais */
-    .modal{position:fixed;inset:0;background:rgba(12,22,32,.62);display:none;align-items:center;justify-content:center;z-index:50}
-    .modal .box{background:#fff;border-radius:12px;max-width:820px;width:92vw;padding:16px}
-    .box h3{margin:0 0 10px}
-    .box textarea{width:100%;min-height:240px;padding:10px;border:1px solid #cfe0ec;border-radius:8px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-    .box .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-    .muted{color:var(--muted);font-size:13px}
+    .container{max-width:1100px;margin:20px auto;padding:16px;background:#fff;border:1px solid #e5e7eb;border-radius:12px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+    .row > *{flex:1}
+    label{display:block;font-weight:600;margin-bottom:6px}
+    input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
+    button{padding:10px 16px;border:1px solid #0f172a;background:#0f172a;color:#fff;border-radius:8px;cursor:pointer}
+    button.secondary{background:#fff;color:#0f172a}
+    .hidden{display:none}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .status{font-weight:700}
+    .pill{display:inline-block;padding:2px 8px;border-radius:16px;border:1px solid #cbd5e1}
+    .pill.pendente{background:#fef3c7}
+    .pill.aprovado{background:#dcfce7}
+    .pill.rejeitado{background:#fee2e2}
+    header img.qbanner{height:48px;width:auto}
+    header{display:flex;gap:12px;align-items:center;padding:12px 0}
+    .totals{display:flex;gap:12px;margin-top:12px}
+    .card{flex:1;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fafafa}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center}
+    .modal .box{background:#fff;border-radius:12px;max-width:700px;width:95%;padding:16px}
+    .right{float:right}
+    .login{max-width:380px;margin:80px auto}
+    .muted{color:#64748b;font-size:14px}
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <div class="banner" aria-label="Queimadas - banner"></div>
-      <div class="title">
-        <h2>Área do Médico Administrador</h2>
-        <button id="logout" class="btn btn-plain">Sair</button>
+  <div class="container" id="app">
+    <header>
+      <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
+      <div>
+        <h1>Área do Médico Administrador</h1>
+        <div class="muted">Valide receitas, relatórios, encaminhamentos e visualize atendimentos</div>
       </div>
-    </div>
-  </header>
-
-  <main>
-    <!-- Linha de filtros + impressão período -->
-    <div class="toolbar">
-      <label>Buscar histórico por CPF
-        <input id="cpfHist1" type="text" placeholder="Somente números" inputmode="numeric">
-      </label>
-      <button id="btnHist1" class="btn btn-plain">Buscar histórico</button>
-      <label>Período inicial <input type="date" id="dIni"></label>
-      <label>Período final <input type="date" id="dFim"></label>
-      <button id="buscar" class="btn btn-ok">Buscar</button>
-      <button id="printPeriodo" class="btn btn-blue">Imprimir PDFs do período</button>
-    </div>
-
-    <!-- Linha 2 -->
-    <div class="toolbar">
-      <label>Buscar histórico por CPF
-        <input id="cpfHist2" type="text" placeholder="Somente números" inputmode="numeric">
-      </label>
-      <button id="btnHist2" class="btn btn-plain">Buscar histórico</button>
-    </div>
-
-    <!-- Cards -->
-    <div class="stats">
-      <div class="card"><h3>Total</h3><div id="sTotal" class="v">0</div></div>
-      <div class="card"><h3>Pendentes</h3><div id="sPend" class="v">0</div></div>
-      <div class="card"><h3>Aprovados</h3><div id="sAprov" class="v">0</div></div>
-      <div class="card"><h3>Rejeitados</h3><div id="sRej" class="v">0</div></div>
-    </div>
-
-    <!-- Tabela -->
-    <table>
-      <thead>
-        <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-
-    <!-- Linha 3 (histórico simples) -->
-    <div class="toolbar" style="margin-top:12px">
-      <label>Buscar histórico por CPF
-        <input id="cpfHist3" type="text" placeholder="Somente números" inputmode="numeric">
-      </label>
-      <label>CPF do paciente (histórico)
-        <input id="cpfHistShow" type="text" placeholder="Apenas números" inputmode="numeric">
-      </label>
-      <button id="btnHistShow" class="btn btn-blue">Ver histórico</button>
-      <span class="muted">Dica: o histórico detalhado também aparece ao clicar “Ver/Editar”.</span>
-    </div>
-  </main>
-
-  <!-- Modal Ver/Editar -->
-  <div class="modal" id="mView">
-    <div class="box">
-      <h3 id="mTitle">Documento</h3>
-      <textarea id="mText"></textarea>
-      <div class="actions">
-        <button class="btn btn-plain" id="mClose">Fechar</button>
+      <div class="right">
+        <button id="logoutBtn" class="secondary hidden">Sair</button>
       </div>
-    </div>
+    </header>
+
+    <section id="login" class="login">
+      <h2>Acesso restrito</h2>
+      <label>CPF</label>
+      <input id="cpf" inputmode="numeric" maxlength="14" placeholder="Seu CPF">
+      <label>Senha</label>
+      <input id="pwd" type="password" placeholder="Sua senha">
+      <div style="margin-top:12px">
+        <button id="loginBtn">Entrar</button>
+      </div>
+      <div id="loginMsg" class="muted" style="margin-top:8px"></div>
+    </section>
+
+    <section id="dash" class="hidden">
+      <div class="row">
+        <div>
+          <label>Período inicial</label><input type="date" id="start">
+        </div>
+        <div>
+          <label>Período final</label><input type="date" id="end">
+        </div>
+        <div>
+          <button id="filtrar">Buscar</button>
+        </div>
+        <div>
+          <button id="imprimir">Imprimir PDFs do período</button>
+        </div>
+      </div>
+
+      <div class="totals">
+        <div class="card"><div>Total</div><div id="t_total" class="status">0</div></div>
+        <div class="card"><div>Pendentes</div><div id="t_pendentes" class="status">0</div></div>
+        <div class="card"><div>Aprovados</div><div id="t_aprovados" class="status">0</div></div>
+        <div class="card"><div>Rejeitados</div><div id="t_rejeitados" class="status">0</div></div>
+      </div>
+
+      <table id="tbl">
+        <thead>
+          <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
   </div>
 
-  <!-- Modal Encaminhar -->
-  <div class="modal" id="mRef">
-    <div class="box">
-      <h3>Encaminhamento para médico presencial</h3>
-      <textarea id="mRefText">Encaminho o(a) paciente acima para avaliação presencial com especialista, devido às queixas relatadas e necessidade de exame físico. Sugestão de especialidade: __________. Motivo principal: __________. Orientações: levar documentos e exames prévios.</textarea>
-      <div class="actions">
-        <button class="btn btn-plain" id="mRefCancel">Cancelar</button>
-        <button class="btn btn-ref" id="mRefSend">Enviar encaminhamento</button>
-      </div>
+  <div id="modal" class="modal"><div class="box">
+    <h3 id="m_title">Documento</h3>
+    <textarea id="m_text" rows="16"></textarea>
+    <div class="row">
+      <button id="m_cancel" class="secondary">Cancelar</button>
+      <div style="flex:1"></div>
+      <button id="m_reject" class="secondary">Rejeitar</button>
+      <button id="m_approve">Aprovar</button>
     </div>
-  </div>
+  </div></div>
 
-  <!-- Modal Histórico por CPF -->
-  <div class="modal" id="mHist">
-    <div class="box">
-      <h3 id="mHistTitle">Histórico</h3>
-      <textarea id="mHistText" readonly></textarea>
-      <div class="actions">
-        <button class="btn btn-plain" id="mHistClose">Fechar</button>
-      </div>
-    </div>
-  </div>
+<script>
+const API = "https://remedy-queimadas-api.onrender.com";
+let token = localStorage.getItem("adm_token") || null;
 
-  <script>
-    // Backend (pode sobrescrever antes com window.API_BASE)
-    const API = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
+const els = {
+  login: document.getElementById('login'),
+  dash: document.getElementById('dash'),
+  cpf: document.getElementById('cpf'),
+  pwd: document.getElementById('pwd'),
+  loginBtn: document.getElementById('loginBtn'),
+  loginMsg: document.getElementById('loginMsg'),
+  logoutBtn: document.getElementById('logoutBtn'),
+  start: document.getElementById('start'),
+  end: document.getElementById('end'),
+  filtrar: document.getElementById('filtrar'),
+  imprimir: document.getElementById('imprimir'),
+  t_total: document.getElementById('t_total'),
+  t_pendentes: document.getElementById('t_pendentes'),
+  t_aprovados: document.getElementById('t_aprovados'),
+  t_rejeitados: document.getElementById('t_rejeitados'),
+  tbl: document.getElementById('tbl').querySelector('tbody'),
+  modal: document.getElementById('modal'),
+  m_title: document.getElementById('m_title'),
+  m_text: document.getElementById('m_text'),
+  m_cancel: document.getElementById('m_cancel'),
+  m_reject: document.getElementById('m_reject'),
+  m_approve: document.getElementById('m_approve'),
+};
 
-    // Util
-    const rows = document.querySelector("#rows");
-    const sTotal = document.querySelector("#sTotal");
-    const sPend  = document.querySelector("#sPend");
-    const sAprov = document.querySelector("#sAprov");
-    const sRej   = document.querySelector("#sRej");
-    const modal = (el,show)=> el.style.display = show ? "flex" : "none";
-    const token = ()=> sessionStorage.getItem("reimed_admin_token") || "";
-    const hdr = ()=> ({ "Content-Type":"application/json", "Authorization":"Bearer "+token() });
+function show(el){ el.classList.remove('hidden'); }
+function hide(el){ el.classList.add('hidden'); }
+function authHeaders(){ return token ? { "Authorization":"Bearer "+token, "Content-Type":"application/json" } : {"Content-Type":"application/json"}; }
 
-    function b(status){
-      const map = {pendente:'b-pendente', aprovado:'b-aprovado', rejeitado:'b-rejeitado'};
-      return `<span class="badge ${map[status]||'b-pendente'}">${status||'pendente'}</span>`;
+function setLogged(p){ 
+  if(p){ show(els.dash); hide(els.login); show(els.logoutBtn); } 
+  else { hide(els.dash); show(els.login); hide(els.logoutBtn); token=null; localStorage.removeItem('adm_token'); }
+}
+
+async function api(path, opt={}){
+  const res = await fetch(API + path, { ...opt, headers: { ...(opt.headers||{}), ...authHeaders() } });
+  if(!res.ok){ const t = await res.text(); throw new Error(t || res.statusText); }
+  return await res.json();
+}
+
+els.loginBtn.onclick = async ()=>{
+  try{
+    const { ok, token: tk } = await api("/auth/login", { method:"POST", body: JSON.stringify({ cpf: els.cpf.value, password: els.pwd.value }) });
+    if(ok){ token=tk; localStorage.setItem("adm_token", tk); setLogged(true); await loadSummary(); await loadDocs(); }
+  }catch(e){ els.loginMsg.textContent = "Falha no login"; }
+};
+
+els.logoutBtn.onclick = ()=> setLogged(false);
+
+async function loadSummary(){
+  const qs = buildRangeQS();
+  const data = await api("/admin/summary"+qs);
+  els.t_total.textContent = data.total;
+  els.t_pendentes.textContent = data.pendentes;
+  els.t_aprovados.textContent = data.aprovados;
+  els.t_rejeitados.textContent = data.rejeitados;
+}
+
+function buildRangeQS(){
+  const p=[]; if(els.start.value) p.push("start="+els.start.value); if(els.end.value) p.push("end="+els.end.value);
+  return p.length ? ("?"+p.join("&")) : "";
+}
+
+async function loadDocs(){
+  const qs = buildRangeQS();
+  const data = await api("/admin/docs"+qs);
+  const tbody = els.tbl; tbody.innerHTML = "";
+  for(const d of (data.items||[])){
+    const tr = document.createElement('tr');
+    tr.innerHTML = "<td>"+d.id+"</td><td>"+(d.pacienteNome||"-")+"</td><td>"+(d.pacienteCPF||"-")+"</td><td>"+d.tipo+"</td>"+
+                   "<td><span class='pill "+d.status+"'>"+d.status+"</span></td><td>"+new Date(d.createdAt).toLocaleString()+"</td>"+
+                   "<td class='actions'></td>";
+    const actions = tr.querySelector('.actions');
+    const btnVer = document.createElement('button'); btnVer.textContent="Ver/Editar"; btnVer.onclick = ()=> openModal(d);
+    actions.appendChild(btnVer);
+    if(d.status!=="aprovado"){
+      const btnApr = document.createElement('button'); btnApr.textContent="Aprovar"; btnApr.onclick = ()=> approveDoc(d);
+      actions.appendChild(btnApr);
+      const btnRej = document.createElement('button'); btnRej.textContent="Rejeitar"; btnRej.onclick = ()=> rejectDoc(d);
+      actions.appendChild(btnRej);
     }
-    function row(d){
-      return `<tr>
-        <td>${d.id}</td>
-        <td>${d.paciente||"-"}</td>
-        <td>${d.cpf||"-"}</td>
-        <td>${d.tipo||"receita"}</td>
-        <td>${b(d.status)}</td>
-        <td>${new Date(d.data||d.created_at||Date.now()).toLocaleString()}</td>
-        <td class="row-actions">
-          <button class="btn btn-plain" data-a="ver" data-id="${d.id}">Ver/Editar</button>
-          <button class="btn btn-ok" data-a="aprovar" data-id="${d.id}">Aprovar</button>
-          <button class="btn btn-danger" data-a="rejeitar" data-id="${d.id}">Rejeitar</button>
-          <button class="btn btn-ref" data-a="ref" data-id="${d.id}">Encaminhar</button>
-          <button class="btn btn-blue" data-a="print" data-id="${d.id}">Imprimir</button>
-        </td>
-      </tr>`;
-    }
+    const btnImp = document.createElement('button'); btnImp.textContent="Imprimir"; btnImp.onclick = ()=> printDoc(d);
+    actions.appendChild(btnImp);
+    tbody.appendChild(tr);
+  }
+}
 
-    async function load(){
-      rows.innerHTML = "<tr><td colspan='7'>Carregando…</td></tr>";
-      try{
-        const q = new URLSearchParams();
-        const di = document.querySelector("#dIni").value; if (di) q.set("from", di);
-        const df = document.querySelector("#dFim").value; if (df) q.set("to", df);
-        const r = await fetch(API+"/admin/docs?"+q.toString(), { headers: hdr() });
-        const j = await r.json();
-        const list = j.items || j.docs || [];
-        sTotal.textContent = list.length;
-        sPend.textContent  = list.filter(x=>x.status==="pendente").length;
-        sAprov.textContent = list.filter(x=>x.status==="aprovado").length;
-        sRej.textContent   = list.filter(x=>x.status==="rejeitado").length;
-        rows.innerHTML = list.map(row).join("") || "<tr><td colspan='7'>Nada encontrado.</td></tr>";
-      }catch(e){
-        rows.innerHTML = "<tr><td colspan='7'>Falha ao carregar.</td></tr>";
-      }
-    }
+function openModal(doc){
+  els.m_title.textContent = "Documento #"+doc.id+" — "+doc.tipo;
+  els.m_text.value = doc.conteudo||"";
+  els.modal.style.display = "flex";
+  els.m_cancel.onclick = ()=> els.modal.style.display = "none";
+  els.m_approve.onclick = async ()=>{ await approveDoc(doc, els.m_text.value); els.modal.style.display="none"; };
+  els.m_reject.onclick = async ()=>{ await rejectDoc(doc); els.modal.style.display="none"; };
+}
 
-    // Handlers da tabela
-    const mView = document.querySelector("#mView");
-    const mTitle= document.querySelector("#mTitle");
-    const mText = document.querySelector("#mText");
-    document.querySelector("#mClose").onclick = ()=> modal(mView,false);
+async function approveDoc(doc, editedText=null){
+  await api("/admin/docs/"+doc.id+"/approve", { method:"POST", body: JSON.stringify({ conteudo: editedText }) });
+  await loadSummary(); await loadDocs();
+}
+async function rejectDoc(doc){
+  await api("/admin/docs/"+doc.id+"/reject", { method:"POST" });
+  await loadSummary(); await loadDocs();
+}
 
-    const mRef  = document.querySelector("#mRef");
-    const mRefText = document.querySelector("#mRefText");
-    document.querySelector("#mRefCancel").onclick = ()=> modal(mRef,false);
-    let selId = null;
+function printDoc(doc){
+  const w = window.open("", "_blank");
+  w.document.write("<pre style='white-space:pre-wrap;font:16px/1.4 system-ui,Segoe UI,Arial'>"+(doc.conteudo||"")+"</pre>");
+  w.document.close(); w.focus(); w.print();
+}
 
-    rows.onclick = async (ev)=>{
-      const a = ev.target.dataset.a;
-      const id= ev.target.dataset.id;
-      if(!a||!id) return;
-      selId = id;
-      if (a==="ver"){
-        const r = await fetch(API+"/admin/doc/"+id, { headers: hdr() });
-        const j = await r.json();
-        mTitle.textContent = `Documento #${id} — ${j.tipo||"receita"}`;
-        mText.value = j.texto || j.content || "";
-        modal(mView,true);
-      }
-      if (a==="aprovar"){
-        await fetch(API+"/admin/doc/"+id+"/approve", { method:"POST", headers: hdr(), body:"{}" });
-        load();
-      }
-      if (a==="rejeitar"){
-        await fetch(API+"/admin/doc/"+id+"/reject", { method:"POST", headers: hdr(), body:"{}" });
-        load();
-      }
-      if (a==="ref"){
-        modal(mRef,true);
-      }
-      if (a==="print"){
-        window.open(API+"/admin/doc/"+id+"/pdf?token="+encodeURIComponent(token()), "_blank");
-      }
-    };
+els.filtrar.onclick = async ()=>{ await loadSummary(); await loadDocs(); };
+els.imprimir.onclick = async ()=>{
+  const qs = buildRangeQS();
+  const data = await api("/admin/docs"+qs);
+  const w = window.open("", "_blank");
+  let html = "<h1>Receitas e Documentos do período</h1>";
+  for(const d of (data.items||[])){
+    html += "<hr><h3>#"+d.id+" — "+d.tipo+" — "+(d.pacienteNome||"-")+"</h3><pre style='white-space:pre-wrap'>"+(d.conteudo||"")+"</pre>";
+  }
+  w.document.write("<html><body>"+html+"</body></html>");
+  w.document.close(); w.focus(); w.print();
+};
 
-    document.querySelector("#mRefSend").onclick = async ()=>{
-      if (!selId) return modal(mRef,false);
-      await fetch(API+"/admin/doc/"+selId+"/referral", {
-        method:"POST", headers: hdr(), body: JSON.stringify({ texto: mRefText.value||"" })
-      });
-      modal(mRef,false);
-      load();
-    };
-
-    // Histórico por CPF
-    const mHist = document.querySelector("#mHist");
-    const mHistText = document.querySelector("#mHistText");
-    const mHistTitle= document.querySelector("#mHistTitle");
-    document.querySelector("#mHistClose").onclick = ()=> modal(mHist,false);
-
-    async function openHist(cpf){
-      if (!cpf) return;
-      const url = API + "/admin/history?cpf=" + encodeURIComponent(cpf);
-      try{
-        const r = await fetch(url, { headers: hdr() });
-        const j = await r.json();
-        const txt = (j.texto || j.history || j.content || JSON.stringify(j,null,2));
-        mHistTitle.textContent = "Histórico — CPF " + cpf;
-        mHistText.value = txt;
-        modal(mHist,true);
-      }catch(e){
-        mHistTitle.textContent = "Histórico — CPF " + cpf;
-        mHistText.value = "Falha ao carregar.";
-        modal(mHist,true);
-      }
-    }
-
-    function onlyDigits(s){ return String(s||'').replace(/\D/g,''); }
-    document.querySelector("#btnHist1").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHist1").value));
-    document.querySelector("#btnHist2").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHist2").value));
-    document.querySelector("#btnHistShow").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHistShow").value));
-
-    // Buscar & imprimir período
-    document.querySelector("#buscar").onclick = load;
-    document.querySelector("#printPeriodo").onclick = ()=>{
-      const di = document.querySelector("#dIni").value || "";
-      const df = document.querySelector("#dFim").value || "";
-      window.open(API+`/admin/periodo/pdf?from=${encodeURIComponent(di)}&to=${encodeURIComponent(df)}&token=${encodeURIComponent(token())}`, "_blank");
-    };
-
-    // Sair
-    document.querySelector("#logout").onclick = ()=>{ sessionStorage.removeItem("reimed_admin_token"); location.href = "admin.html"; };
-
-    // Load inicial
-    load();
-  </script>
+// Estado inicial
+if(token){ setLogged(true); loadSummary().then(loadDocs).catch(()=>setLogged(false)); }
+</script>
 </body>
 </html>
