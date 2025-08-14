@@ -90,6 +90,19 @@
       div.textContent = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+
+      // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
+      try{
+        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+          const pacienteNome = localStorage.getItem('pacienteNome') || "";
+          const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
+          fetch(API_BASE + "/admin/docs", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
+          }).catch(()=>{});
+        }
+      }catch(_e){}
     }
     function status(txt){
       clearStatus();
@@ -98,6 +111,19 @@
       indicador.textContent = txt;
       chat.appendChild(indicador);
       chat.scrollTop = chat.scrollHeight;
+
+      // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
+      try{
+        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+          const pacienteNome = localStorage.getItem('pacienteNome') || "";
+          const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
+          fetch(API_BASE + "/admin/docs", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
+          }).catch(()=>{});
+        }
+      }catch(_e){}
     }
     function clearStatus(){
       if (indicador && indicador.parentNode){
@@ -107,14 +133,16 @@
     function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
     async function pensandoEDigitando(texto){
-      const chars = Math.max(10, String(texto||"").length);
-      const pensar = Math.min(6000, Math.max(2500, Math.round(chars * 30)));
-      status("Médico pensando…");
-      await delay(pensar);
-      status("Médico digitando…");
-      await delay(Math.min(3500, Math.max(1200, Math.round(chars * 15))));
-      clearStatus();
-    }
+  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 10;
+  const pensarMin = 15000, pensarMax = 30000;
+  const pensar = Math.floor(pensarMin + Math.random()*(pensarMax - pensarMin));
+  status("Médico pensando…");
+  await delay(pensar);
+  const typePerWord = 2300;
+  const digitar = Math.max(6900, Math.round(words * typePerWord));
+  status("Médico digitando…");
+  await delay(digitar);
+}
 
     async function acordarServidor(){
       const ctrl = new AbortController();
