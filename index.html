@@ -1,219 +1,33 @@
-
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Queimadas Telemedicina — Recepção</title>
-  <style>
-    :root {
-      --azul:#0f3144; --azul2:#173f55; --verde:#157347; --cinza:#eef3f7; --borda:#e1e7ee;
-    }
-    html,body {height:100%; margin:0; background:#f5f9fc; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial;}
-    header {background:var(--azul); color:#fff; padding:14px 18px; display:flex; align-items:center; gap:12px; justify-content:center; position:sticky; top:0; z-index:5;}
-    header img {height:48px; max-width:60vw; object-fit:contain}
-    header h1 {margin:0; font-size:clamp(18px,3.2vw,26px); font-weight:700}
-    main {max-width:980px; margin:18px auto; padding:0 12px;}
-    .card {background:#fff; border:1px solid var(--borda); border-radius:14px; box-shadow:0 4px 16px rgba(0,0,0,.04);}
-    .chat {min-height:52vh; max-height:66vh; overflow:auto; padding:16px;}
-    .row {display:flex; margin:10px 0; gap:10px; align-items:flex-end}
-    .avatar {width:36px; height:36px; border-radius:50%; background:#dfe9f3; display:flex; align-items:center; justify-content:center; color:#234; font-weight:700}
-    .bubble {max-width:76%; padding:12px 14px; border-radius:16px; line-height:1.35; border:1px solid var(--borda)}
-    .from-bot .bubble {background:#ffffff}
-    .from-user {justify-content:flex-end}
-    .from-user .bubble {background:#dff7ea; border-color:#c5ecd8}
-    .footer {display:flex; gap:10px; padding:12px; border-top:1px solid var(--borda)}
-    input[type=text] {flex:1; padding:12px 14px; border-radius:12px; border:1px solid var(--borda); font-size:16px; outline:none;}
-    button.enviar {background:var(--verde); color:#fff; border:none; padding:12px 18px; border-radius:12px; font-weight:600; cursor:pointer}
-    .chips {display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
-    .chip {background:#f0f6fb; border:1px solid #d6e6f3; padding:8px 12px; border-radius:999px; cursor:pointer}
-    .typing {width:54px; height:20px; display:inline-flex; align-items:center; gap:3px; }
-    .dot {width:8px; height:8px; background:#94a8b8; border-radius:50%; animation:blink 1.2s infinite alternate}
-    .dot:nth-child(2) {animation-delay:.2s} .dot:nth-child(3) {animation-delay:.4s}
-    @keyframes blink {from {opacity:.35; transform:translateY(1px)} to {opacity:1; transform:translateY(-1px)}}
-    footer {
-      max-width:980px; margin:10px auto 22px; padding:0 12px; text-align:center; color:#4b5b69;
-    }
-    footer img {height:34px; object-fit:contain}
-    .hint {font-size:13px; color:#6b7b88; margin-top:6px}
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Queimadas Telemedicina</title>
+  <script>
+    // Ir direto para a recepção
+    location.replace('receptionist.html');
+  </script>
 </head>
 <body>
-  <header>
-    <img src="img/logo-queimadas.png" alt="" onerror="this.style.display='none'">
-    <h1>Queimadas Telemedicina — Recepção</h1>
-  </header>
-
-  <main class="card">
-    <div id="chat" class="chat"></div>
-    <div class="footer">
-      <input id="msg" type="text" placeholder="Digite aqui..." autocomplete="off" />
-      <button id="send" class="enviar">Enviar</button>
-    </div>
-    <div class="hint">Para segurança, sua sessão expira após alguns minutos sem atividade.</div>
-  </main>
-
-  <footer>
-    <img src="img/logo-atendemais.png" alt="" onerror="this.style.display='none'">
-  </footer>
-
 <script>
-(() => {
-  const API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
-  const chat = document.getElementById('chat');
-  const input = document.getElementById('msg');
-  const sendBtn = document.getElementById('send');
-
-  const state = {
-    phase: 'await_cpf', // 'ask_docs_or_new', 'choose_specialty', 'ready_to_call'
-    cpf: sessionStorage.getItem('cpf') || '',
-    last: Date.now(),
-  };
-
-  function scrollBottom() { chat.scrollTop = chat.scrollHeight; }
-  function row(html, cls='from-bot') {
-    const r = document.createElement('div');
-    r.className = 'row ' + cls;
-    r.innerHTML = html;
-    chat.appendChild(r); scrollBottom(); return r;
+// Expiração por inatividade (3 minutos) — redireciona para Recepção
+(function(){
+  let timer;
+  const LIMIT_MS = 3*60*1000;
+  function reset(){
+    clearTimeout(timer);
+    timer = setTimeout(()=>{
+      try { sessionStorage.clear(); } catch(e){}
+      location.replace("receptionist.html");
+    }, LIMIT_MS);
   }
-  function bubble(text, who='bot') {
-    const html = who==='bot'
-      ? `<div class="avatar">R</div><div class="bubble">${text}</div>`
-      : `<div class="bubble">${text}</div>`;
-    return row(html, who==='bot'?'from-bot':'from-user');
-  }
-  function typing() {
-    return row(`<div class="avatar">R</div>
-      <div class="bubble"><span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>`);
-  }
-
-  function maskCpf(cpf) { return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
-
-  // Conversation script
-  async function start() {
-    // First receptionist message flow (chat style, no popups)
-    await sleepHuman(800, 1500);
-    bubble('Olá! Sou a <b>recepção</b> da Telemedicina de Queimadas.');
-    await think();
-    bubble('Antes de começarmos, digite o seu <b>CPF</b> (apenas números).<br><small><b>Atenção:</b> O CPF é vinculado ao seu prontuário. <b>Não utilize o CPF de outra pessoa</b>, pois isso pode causar erros na prescrição.</small>');
-    input.placeholder = 'Digite seu CPF (apenas números)';
-    state.phase = 'await_cpf';
-  }
-
-  function sleepHuman(min=300, max=1200) {
-    return new Promise(r => setTimeout(r, Math.round(min + Math.random()*(max-min))));
-  }
-  async function think() { const t = typing(); await sleepHuman(1200, 2000); t.remove(); }
-  function sendUser(text) { bubble(escapeHtml(text), 'user'); state.last = Date.now(); }
-  function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c])); }
-
-  async function handleMessage(text) {
-    text = text.trim();
-    if (!text) return;
-    sendUser(text);
-
-    if (state.phase === 'await_cpf') {
-      const cpf = text.replace(/\D+/g,'');
-      if (cpf.length < 11) {
-        await think(); bubble('CPF inválido. Digite apenas números (11 dígitos).'); return;
-      }
-      state.cpf = cpf; sessionStorage.setItem('cpf', cpf);
-      await think(); bubble('Perfeito. CPF registrado: <b>'+maskCpf(cpf)+'</b>.');
-      input.value='';
-      // Offer options
-      await think();
-      const wrapper = document.createElement('div');
-      wrapper.className='chips';
-      const a = document.createElement('div'); a.className='chip'; a.textContent='Abrir nova consulta';
-      const b = document.createElement('div'); b.className='chip'; b.textContent='Ver/baixar documentos anteriores';
-      wrapper.appendChild(a); wrapper.appendChild(b);
-      const r = bubble(wrapper.outerHTML); // render placeholder
-      r.querySelectorAll('.chip')[0].addEventListener('click', () => chooseSpecialty());
-      r.querySelectorAll('.chip')[1].addEventListener('click', () => listDocs());
-      state.phase = 'ask_docs_or_new';
-      input.placeholder = 'Escreva aqui...';
-      return;
-    }
-
-    if (state.phase === 'choose_specialty') {
-      // User can also type a specialty name; fallback to clinical if not matched.
-      const chosen = (text||'').toLowerCase();
-      let specialty = state._specialtyMap?.get(chosen) || state._specialtyFallback || 'clinico';
-      await think();
-      bubble('Especialidade selecionada: <b>'+specialty.toUpperCase()+'</b>. Preparando a sala...');
-      await callDoctor(specialty);
-      return;
-    }
-
-    // default: keep in chat
-    await think();
-    bubble('Entendi. Para continuar, use as opções acima.');
-  }
-
-  async function listDocs() {
-    await think();
-    bubble('Vou verificar se há documentos para o CPF informado...');
-    try {
-      const u = new URL(API_BASE + '/api/patient/docs');
-      u.searchParams.set('cpf', state.cpf);
-      const resp = await fetch(u, {credentials:'omit'});
-      if (!resp.ok) throw new Error('resp '+resp.status);
-      const data = await resp.json();
-      if (!Array.isArray(data) || !data.length) {
-        await think(); bubble('Não localizei documentos recentes para este CPF.');
-        return;
-      }
-      const list = data.map(d => `<li>#<built-in function id> — <b>${d.tipo||'documento'}</b> — <a href="${d.pdf_url||'#'}" target="_blank">baixar PDF</a></li>`).join('');
-      bubble('<b>Documentos:</b><ul>'+list+'</ul>');
-    } catch(e) {
-      await think(); bubble('Não consegui consultar agora. Você pode tentar novamente mais tarde.');
-    }
-  }
-
-  async function chooseSpecialty() {
-    await think();
-    bubble('Qual especialidade você deseja?');
-    await think();
-    const chips = [
-      'Clínico', 'Pediatria', 'Ginecologia', 'Dermatologia', 'Ortopedia',
-      'Cardiologia', 'Neurologia', 'Psiquiatria'
-    ];
-    const wrap = document.createElement('div'); wrap.className='chips';
-    chips.forEach(txt => { const c = document.createElement('div'); c.className='chip'; c.textContent=txt; wrap.appendChild(c); });
-    const r = bubble(wrap.outerHTML);
-    state._specialtyMap = new Map(chips.map(n => [n.toLowerCase(), n]));
-    state._specialtyFallback = 'Clínico';
-    r.querySelectorAll('.chip').forEach(el => el.addEventListener('click', () => handleMessage(el.textContent)));
-    state.phase = 'choose_specialty';
-  }
-
-  async function callDoctor(specialty) {
-    try {
-      const resp = await fetch(API_BASE + '/api/consult/start', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ cpf: state.cpf, specialty })
-      });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const data = await resp.json();
-      const token = data.consult_token || data.token || data.handshake || '';
-      if (!token) throw new Error('sem token');
-      const url = new URL('medico.html', location.href);
-      url.searchParams.set('token', token);
-      url.searchParams.set('cpf', state.cpf);
-      location.href = url.toString();
-    } catch(e) {
-      await think();
-      bubble('Não consegui abrir a sala agora. Vamos tentar novamente em alguns segundos. Se persistir, volte à recepção e tente mais tarde.');
-    }
-  }
-
-  sendBtn.addEventListener('click', () => handleMessage(input.value));
-  input.addEventListener('keydown', (e) => { if (e.key==='Enter') handleMessage(input.value); });
-
-  // Start flow
-  start();
+  ["click","keydown","mousemove","touchstart","scroll"].forEach(ev=>{
+    window.addEventListener(ev, reset, {passive:true});
+  });
+  reset();
 })();
 </script>
+
 </body>
 </html>
