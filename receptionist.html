@@ -1,145 +1,137 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Queimadas Telemedicina — Recepção</title>
-  <style>
-    :root{ --bg:#0f2e46; --ink:#0b2233; --muted:#5b6b79; }
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f4f7fb;color:var(--ink)}
-    header{background:var(--bg);color:#fff;padding:16px 12px;text-align:center}
-    h1{margin:0;font-size:24px}
-    main{max-width:980px;margin:16px auto;padding:0 12px 40px}
-    .card{background:#fff;border:1px solid #e6eef4;border-radius:12px;box-shadow:0 6px 16px rgba(12,34,56,.06);padding:14px}
-    #chat{height:52vh;min-height:340px;border:1px solid #e6eef4;border-radius:12px;overflow:auto;padding:10px}
-    .row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
-    input[type=text]{flex:1;padding:10px 12px;border:1px solid #cfe0ec;border-radius:10px}
-    button{border:none;border-radius:10px;padding:10px 14px;font-weight:700;background:#117a51;color:#fff}
-    .muted{color:var(--muted);font-size:13px;margin-top:8px}
-    /* CPF overlay */
-    .cpf-overlay{position:fixed;inset:0;background:rgba(14,30,45,.72);display:none;align-items:center;justify-content:center;z-index:9999}
-    .cpf-card{background:#fff;border-radius:16px;padding:18px 16px;width:min(92vw,520px);box-shadow:0 10px 30px rgba(3,22,37,.25)}
-    .cpf-card h3{margin:0 0 10px}
-    .cpf-card p{margin:6px 0;color:#334e68}
-    .cpf-row{display:flex;gap:10px;margin-top:12px}
-    .cpf-input{flex:1;padding:12px 14px;border:1px solid #cfe0ec;border-radius:12px;font-size:16px}
-    .cpf-btn{background:#0f2e46;color:#fff;border:none;border-radius:12px;padding:12px 16px;font-weight:700}
-    .cpf-warn{background:#fff3cd;border:1px solid #ffe08a;color:#664d03;padding:10px 12px;border-radius:10px;margin-top:10px}
-    .error{border-color:#e11d48!important;outline:2px solid #fee2e2}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recepção – Queimadas Telemedicina</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header><h1>Queimadas Telemedicina — Recepção</h1></header>
+  <header>
+    <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
+    <h1>Queimadas Telemedicina</h1>
+  </header>
 
   <main>
-    <div class="card">
-      <div id="chat" aria-live="polite"></div>
-      <div class="row">
-        <input id="msg" type="text" placeholder="Digite aqui..." autocomplete="off">
-        <button id="send" type="button">Enviar</button>
+    <div id="chat" class="chat" aria-live="polite">
+      <div class="msg recep" id="welcome">Recepção está digitando…</div>
+      <div id="especialidades" class="msg recep" style="display:none">
+        <div><strong>Selecione a especialidade para direcionarmos ao médico:</strong></div>
+        <div id="lista-esp"></div>
       </div>
-      <div class="muted">Para segurança, sua sessão expira após alguns minutos sem atividade.</div>
+      <div id="pre-transfer" class="msg recep" style="display:none"></div>
+      <div id="aguarde" class="msg system" style="display:none"></div>
+    </div>
+
+    <footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
+    <div class="legal">
+      Base legal da Telemedicina no Brasil (resumo): legislação federal vigente e normas do CFM
+      (ex.: Resolução CFM 2.314/2022), com observância à LGPD (Lei 13.709/2018). Atendimento
+      remoto com registro em prontuário, identificação das partes e consentimento informado.
     </div>
   </main>
 
-  <!-- CPF Gate embutido -->
-  <div id="cpfGate" class="cpf-overlay">
-    <div class="cpf-card">
-      <h3>Antes de começar, informe seu CPF</h3>
-      <p>O CPF é vinculado ao seu prontuário eletrônico. <b>Não utilize o CPF de outra pessoa.</b></p>
-      <div class="cpf-warn">O uso do mesmo CPF por pessoas diferentes pode gerar erros na prescrição, porque o sistema considera o histórico de consultas anteriores para a triagem.</div>
-      <div class="cpf-row">
-        <input class="cpf-input" id="cpfInput" type="text" inputmode="numeric" placeholder="CPF (apenas números)" maxlength="14" aria-label="CPF">
-        <button class="cpf-btn" id="cpfOk" type="button">Continuar</button>
-      </div>
-    </div>
-  </div>
+<script>
+const chat = document.getElementById('chat');
+const boxEsp = document.getElementById('especialidades');
+const lista = document.getElementById('lista-esp');
+const pre = document.getElementById('pre-transfer');
+const aguarde = document.getElementById('aguarde');
 
-  <script>
-    // Backend para features de recepção (se necessário)
-    window.API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
+function pushMsg(el){ chat.appendChild(el); chat.scrollTop = chat.scrollHeight; }
 
-    // ====== CPF GATE (robusto para iOS/Safari) ======
-    (function(){
-      const gate  = document.getElementById('cpfGate');
-      const input = document.getElementById('cpfInput');
-      const ok    = document.getElementById('cpfOk');
+function typeMessage(text, klass="recep", min=10000){
+  const m = document.createElement('div');
+  m.className = 'msg '+klass;
+  const delay = Math.max(min, Math.min(20000, text.length*60)); // 60ms por caractere, min 10s
+  m.textContent = 'Recepção está digitando…';
+  pushMsg(m);
+  setTimeout(()=>{ m.textContent = text; }, delay);
+  return new Promise(res=>setTimeout(res, delay+200));
+}
 
-      function digits(s){ return String(s||'').replace(/\\D/g,''); }
-      function fmt(v){
-        const d = digits(v).slice(0,11);
-        return d.replace(/(\\d{3})(\\d)/,'$1.$2')
-                .replace(/(\\d{3})\\.(\\d{3})(\\d)/,'$1.$2.$3')
-                .replace(/(\\d{3})\\.(\\d{3})\\.(\\d{3})(\\d)/,'$1.$2.$3-$4');
-      }
-      function saveCPF(cpf){
-        try{
-          const cur = JSON.parse(sessionStorage.getItem('reimed_patient')||'{}');
-          cur.cpf = cpf;
-          sessionStorage.setItem('reimed_patient', JSON.stringify(cur));
-        }catch(e){
-          sessionStorage.setItem('reimed_patient', JSON.stringify({cpf}));
-        }
-      }
-      function showGate(){ gate.style.display = 'flex'; }
-      function hideGate(){
-        // remove overlay de forma definitiva para evitar qualquer interceptação
-        gate.style.display = 'none';
-        gate.remove();
-      }
-      function validateAndClose(){
-        const d = digits(input.value);
-        if (d.length !== 11){
-          input.classList.add('error'); input.focus(); return false;
-        }
-        input.classList.remove('error');
-        saveCPF(d);
-        hideGate();
-        return true;
-      }
+// Welcome + load especialidades
+(async ()=>{
+  await typeMessage('Bem-vindo(a) à Queimadas Telemedicina!');
+  await typeMessage('Escolha abaixo a especialidade para direcionarmos você ao médico adequado.');
+  // carrega lista
+  const data = await fetch('especialidades.json').then(r=>r.json()).catch(()=>[]);
+  lista.innerHTML = '';
+  for(const item of data){
+    const b = document.createElement('button');
+    b.className='btn'; b.type='button';
+    b.innerHTML = '<strong>'+item.nome+'</strong><small>'+item.descricao+'</small>';
+    b.addEventListener('click', ()=> selectSpecialty(item.nome));
+    lista.appendChild(b);
+  }
+  boxEsp.style.display='block';
+})();
 
-      // Máscara e atalhos
-      input.addEventListener('input', ()=>{ input.value = fmt(input.value); });
-      input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') ok.click(); });
+async function selectSpecialty(nome){
+  boxEsp.style.display='none';
+  localStorage.setItem('selectedSpecialty', nome);
+  await typeMessage('Especialidade escolhida: '+nome+'.', 'eu', 500);
+  pre.style.display='block';
+  pre.textContent = 'Certo. Vou encaminhar você para o médico de '+nome+'. Tempo estimado: _calculando…';
+  const minutos = Math.floor(Math.random()*5)+1; // 1–5
+  const total = minutos*60;
+  let t=total;
+  pre.innerHTML = 'Certo. Vou encaminhar você para o médico de <b>'+nome+'</b>. Tempo estimado: <b>'+minutos+' min</b>.';
+  aguarde.style.display='block';
+  const timer = document.createElement('div');
+  timer.innerHTML = '<span class="badge">Aguardando atendimento: <span id="count">--:--</span></span>';
+  aguarde.innerHTML='';
+  aguarde.appendChild(timer);
+  const span = timer.querySelector('#count');
+  const iv = setInterval(()=>{
+     const mm = String(Math.floor(t/60)).padStart(1,'0');
+     const ss = String(t%60).padStart(2,'0');
+     span.textContent = mm+':'+ss;
+     if(--t<0){ clearInterval(iv); conectar(); }
+  },1000);
+  // sinaliza fluxo válido
+  localStorage.setItem('triageComplete','1');
+}
 
-      ok.addEventListener('click', validateAndClose);
+function conectar(){
+  // vai primeiro para a ponte que cria a sessão e redireciona
+  location.href = 'paciente.html';
+}
+// Override de tempos de digitação para Recepção
+function __calcTypingTimeFor(texto){
+  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 8;
+  return Math.max(6900, Math.round(words * 2300)); // 1 palavra a cada ~2.3s
+}
+function __calcThinkingTime(){
+  return Math.floor(15000 + Math.random()*15000); // 15–30s
+}
+async function recepcaoPensandoEDigitando(texto){
+  if (typeof delay !== 'function'){ window.delay = (ms)=>new Promise(r=>setTimeout(r,ms)); }
+  if (typeof status === 'function'){ status("Recepção pensando…"); }
+  await delay(__calcThinkingTime());
+  if (typeof status === 'function'){ status("Recepção digitando…"); }
+  await delay(__calcTypingTimeFor(texto));
+}
+</script>
 
-      // Inicialização
-      try{
-        const p = JSON.parse(sessionStorage.getItem('reimed_patient')||'null');
-        const cpf = p && digits(p.cpf);
-        if (cpf && cpf.length===11){ hideGate(); }
-        else{ showGate(); input.focus({preventScroll:true}); }
-      }catch(e){
-        showGate(); input.focus({preventScroll:true});
-      }
-    })();
+<script>
+// Expiração por inatividade (3 minutos) — redireciona para Recepção
+(function(){
+  let timer;
+  const LIMIT_MS = 3*60*1000;
+  function reset(){
+    clearTimeout(timer);
+    timer = setTimeout(()=>{
+      try { sessionStorage.clear(); } catch(e){}
+      location.replace("receptionist.html");
+    }, LIMIT_MS);
+  }
+  ["click","keydown","mousemove","touchstart","scroll"].forEach(ev=>{
+    window.addEventListener(ev, reset, {passive:true});
+  });
+  reset();
+})();
+</script>
 
-    // ====== Mock de chat da recepção ======
-    const chat = document.getElementById('chat');
-    const msg = document.getElementById('msg');
-    const send = document.getElementById('send');
-    function say(role, text){
-      const p = document.createElement('p');
-      p.textContent = text;
-      p.style.margin = '6px 0';
-      p.style.padding = '8px 10px';
-      p.style.borderRadius = '10px';
-      p.style.background = role==='bot' ? '#f7fafc' : '#dff4ff';
-      p.style.border = '1px solid #e6eef4';
-      p.style.maxWidth = '90%';
-      p.style[ role==='bot' ? 'marginRight' : 'marginLeft' ] = 'auto';
-      chat.appendChild(p);
-      chat.scrollTop = chat.scrollHeight;
-    }
-    say('bot','Bem-vindo(a)! Digite sua mensagem para iniciar sua consulta.');
-    send.addEventListener('click', ()=>{
-      const t = (msg.value||'').trim();
-      if (!t) return;
-      say('user', t);
-      msg.value = '';
-      setTimeout(()=> say('bot','Recepção: vou encaminhar você ao médico assim que a sala estiver pronta.'), 400);
-    });
-  </script>
 </body>
 </html>
