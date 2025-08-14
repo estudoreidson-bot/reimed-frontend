@@ -113,25 +113,5 @@ async function recepcaoPensandoEDigitando(texto){
   await delay(__calcTypingTimeFor(texto));
 }
 </script>
-
-<script>
-// Expiração por inatividade (3 minutos) — redireciona para Recepção
-(function(){
-  let timer;
-  const LIMIT_MS = 3*60*1000;
-  function reset(){
-    clearTimeout(timer);
-    timer = setTimeout(()=>{
-      try { sessionStorage.clear(); } catch(e){}
-      location.replace("receptionist.html");
-    }, LIMIT_MS);
-  }
-  ["click","keydown","mousemove","touchstart","scroll"].forEach(ev=>{
-    window.addEventListener(ev, reset, {passive:true});
-  });
-  reset();
-})();
-</script>
-
 </body>
 </html>
