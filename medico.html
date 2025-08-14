@@ -73,7 +73,7 @@
   <script>
     // ====== Config ======
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
-    const ESPECIALIDADE = new URLSearchParams(location.search).get("especialidade") || "Clínico Geral";
+    const ESPECIALIDADE = (sessionStorage.getItem("specialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
 
     // ====== Estado ======
     const chat = document.getElementById("chat");
@@ -94,13 +94,19 @@
       // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+
+          // Evita duplicar documento na mesma consulta
+          if (sessionStorage.getItem('docSentForSession') === (HS&&HS.sessionId)){
+            return; // já enviado
+          }
+
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
             headers:{ "Content-Type":"application/json" },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
+          }).then(()=>{ try{ sessionStorage.setItem('docSentForSession', (HS&&HS.sessionId)||''); }catch(_){} }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -115,13 +121,19 @@
       // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+
+          // Evita duplicar documento na mesma consulta
+          if (sessionStorage.getItem('docSentForSession') === (HS&&HS.sessionId)){
+            return; // já enviado
+          }
+
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
             headers:{ "Content-Type":"application/json" },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
+          }).then(()=>{ try{ sessionStorage.setItem('docSentForSession', (HS&&HS.sessionId)||''); }catch(_){} }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -171,6 +183,14 @@
 
     async function enviarTexto(){
       const txt = (input.value || "").trim();
+
+            // Intercepta perguntas sobre IA e assuntos fora da medicina
+            if(/\b(você|voce|vc)\s*(é|eh)\s*i+\s*\??/i.test(txt) || /\bé\s*i+a\b/i.test(txt)){
+              const frase = "Sou o médico desta teleconsulta e só posso ajudar com questões de saúde nesta sala. Vamos focar no seu quadro. Depois disso, volte à anamnese.";
+              addMsg("assistant", frase);
+              input.value = "";
+              return;
+            }
       if(!txt) return;
       historico.push({ role:"user", content: txt });
       addMsg("user", txt);
@@ -234,103 +254,5 @@
       }
     })();
   </script>
-
-<script>
-// ===== Ajustes solicitados (sem alterar layout) =====
-
-// Frases padrão
-const FRASE_FORA_MEDICINA = "Desculpe, só posso ajudar com assuntos médicos nesta plataforma. Descreva seu problema de saúde para seguirmos o atendimento.";
-const FRASE_PERSONA_MEDICO = "Sou o médico responsável pelo seu atendimento aqui. Vamos focar no seu quadro clínico para eu te ajudar da melhor forma.";
-
-// Estado de controle (não visual)
-window.__receitaAguardando = window.__receitaAguardando || false;
-window.__ultimaMsgPaciente = "";
-window.__traumaReportado = false;
-
-// Proteção: evitar pedido de foto da cabeça em cefaleia típica (permitir somente se trauma/lesão relatado)
-function filtrarPedidoFotoSeNecessario(textoAssistente){
-  try{
-    const pedeFoto = /\bfoto\b|\bimagem\b|\banexar\b/i.test(textoAssistente||"");
-    if(!pedeFoto) return textoAssistente;
-    if(window.__traumaReportado) return textoAssistente; // permitido quando trauma/lesão
-    // Remove frases que pedem foto (mantém o resto)
-    return String(textoAssistente).split(/(?<=[\.\!\?])\s+/).filter(
-      s=>!/\bfoto\b|\bimagem\b|\banexar\b/i.test(s)
-    ).join(" ").trim() || "Vamos continuar a anamnese. Conte mais sobre seus sintomas, por favor.";
-  }catch(e){ return textoAssistente; }
-}
-
-// Evitar receitas duplicadas após já constar [STATUS: aguardando receita]
-function bloquearReceitaDuplicada(textoAssistente){
-  const temStatus = /\[STATUS:\s*aguardando receita\]/i.test(textoAssistente||"");
-  if(temStatus && window.__receitaAguardando){
-    return "Já registrei sua prescrição nesta consulta. Posso esclarecer as dúvidas, mas a receita permanece a mesma.";
-  }
-  return textoAssistente;
-}
-
-// Detector simples de assuntos fora de medicina
-function isForaDeMedicina(txt){
-  const t = (txt||"").toLowerCase();
-  const naoMed = [
-    "futebol","time","jogo","videogame","filme","série","musica","música",
-    "bitcoin","cripto","bolsa de valores","ações","investimento","imposto","irpf",
-    "programação","javascript","python","site","html","css",
-    "política","eleição","presidente","prefeito","vereador",
-    "carro","moto","automóvel","celular","iphone","android"
-  ];
-  return naoMed.some(k=>t.includes(k));
-}
-
-// Ganchos na função de envio e no addMsg
-(function(){
-  const __orig_addMsg = window.addMsg;
-  if(typeof __orig_addMsg === "function"){
-    window.addMsg = function(role, text){
-      if(role === "assistant"){
-        // Atualiza flag de receita em aberto
-        if(/\[STATUS:\s*aguardando receita\]/i.test(text||"")){
-          window.__receitaAguardando = true;
-        }
-        // Filtrar pedido de foto indevido e impedir duplicidade de receita
-        let filtrado = filtrarPedidoFotoSeNecessario(String(text||""));
-        filtrado = bloquearReceitaDuplicada(filtrado);
-        return __orig_addMsg(role, filtrado);
-      }
-      return __orig_addMsg(role, text);
-    };
-  }
-
-  // Intercepta envio de texto para tratar IA/persona e fora de medicina
-  const btn = document.getElementById("send");
-  const inp = document.getElementById("msg");
-  if(btn && inp && typeof window.enviarTexto === "function"){
-    const __orig_enviar = window.enviarTexto;
-    window.enviarTexto = async function(){
-      const txt = (inp.value||"").trim();
-      if(!txt) return;
-      window.__ultimaMsgPaciente = txt;
-      window.__traumaReportado = /trauma|les[aã]o|ferida|queda|batida|acidente|hematoma|corte|lacera[çc][aã]o/i.test(txt);
-      // Pergunta "você é IA?"
-      if(/\b(voc[eê]\s*(é|e)\s*(ia|intelig[eê]ncia artificial|rob[oô]|bot)|voc[eê]\s*(é|e)\s*humano)\b/i.test(txt)){
-        addMsg("user", txt);
-        inp.value="";
-        addMsg("assistant", FRASE_PERSONA_MEDICO);
-        return;
-      }
-      // Assuntos fora de medicina
-      if(isForaDeMedicina(txt)){
-        addMsg("user", txt);
-        inp.value="";
-        addMsg("assistant", FRASE_FORA_MEDICINA);
-        return;
-      }
-      // fluxo normal
-      return __orig_enviar.apply(this, arguments);
-    };
-  }
-})();
-</script>
-
 </body>
 </html>
