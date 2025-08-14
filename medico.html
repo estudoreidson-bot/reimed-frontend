@@ -1,248 +1,218 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Médico – Queimadas Telemedicina</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Queimadas Telemedicina — Médico</title>
   <style>
-    :root{
-      --azul:#0c2e4e;
-      --bolha:#e7f1ff;
-      --bolha-user:#d8f7e5;
-      --borda:#cfe0ff;
-      --verde:#0c9447;
+    :root {
+      --bg:#0f2e46; --fg:#0b2233; --card:#f3f7fb; --accent:#0a7a4b; --muted:#6b7b8c;
     }
-    body{
-      margin:0; background:#f6f8fb; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#0b1b2b;
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f1f5f9; color:#0b2233; }
+    header { background: var(--bg); color:#fff; padding:16px 12px 10px; text-align:center; }
+    .brand { max-width:980px; margin:0 auto; }
+    .banner {
+      height:86px; background:#0f2e46 url('img/banner-queimadas.jpg') center/cover no-repeat;
+      border-radius:12px; margin:4px auto 12px; max-width:980px;
     }
-    header{
-      background:var(--azul); color:#fff; padding:8px 12px 16px;
-      display:flex; flex-direction:column; align-items:center; gap:8px;
+    h1 { margin:0 0 4px; font-size:28px; line-height:1.2; }
+    main { max-width:980px; margin:18px auto; padding:0 12px 28px; }
+    .chat-card {
+      background:var(--card); border-radius:16px; padding:14px; min-height:420px;
+      box-shadow: 0 6px 20px rgba(2,23,38,0.06), 0 2px 6px rgba(2,23,38,0.05);
     }
-    header .banner{ width:100%; max-width:1100px; border-radius:8px; overflow:hidden; }
-    header h1{ font-size: clamp(18px, 3.8vw, 28px); margin: 6px 0 0; font-weight:700; }
-    .wrap{
-      max-width: 980px; margin: 12px auto; padding: 0 12px;
+    #chatBox {
+      background:#fff; border-radius:14px; height:54vh; min-height:360px; overflow:auto;
+      padding:14px 12px; border:1px solid #e5edf4;
     }
-    .chat{
-      background:#fff; border:1px solid #e6ebf5; border-radius:12px; padding:12px; min-height:50vh;
-      display:flex; flex-direction:column; gap:10px;
+    .msg { max-width:86%; padding:10px 12px; margin:8px 0; border-radius:14px; line-height:1.4; white-space:pre-wrap; }
+    .msg.user { margin-left: auto; background:#dff4ff; border:1px solid #c9e7f7; }
+    .msg.bot  { margin-right: auto; background:#f7fafc; border:1px solid #e7eef5; }
+    .row { display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap; }
+    .row .file-btn { background:#0f2e46; color:#fff; border:none; padding:14px 18px; border-radius:12px; font-weight:600; }
+    .row input[type="text"], .row textarea {
+      flex:1; border:1px solid #cfe0ec; background:#fff; border-radius:12px; padding:12px 14px; min-height:46px;
+      outline:none; font-size:16px;
     }
-    .msg{
-      max-width: 85%; border-radius:14px; padding:12px 14px; line-height:1.35; font-size:16px;
-      border:1px solid var(--borda);
-      box-shadow: 0 1px 0 rgba(10,30,60,.03);
-    }
-    .m-med{ background: var(--bolha); align-self:flex-start; }
-    .m-user{ background: var(--bolha-user); align-self:flex-end; }
-    .status{ align-self:center; font-size:14px; color:#375; padding:4px 10px; background:#eefbf3; border-radius:999px; border:1px solid #d3f1e2; }
-    .rodape{
-      display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;
-    }
-    .rodape .filebtn{ background:var(--azul); color:#fff; border:none; padding:12px 14px; border-radius:12px; font-weight:600; }
-    .rodape input[type="file"]{ display:none; }
-    .rodape .inpt{ flex:1 1 240px; border:1px solid #cfd8ea; border-radius:12px; padding:12px 14px; font-size:16px; }
-    .rodape .send{ background:#0e8240; color:#fff; border:none; padding:12px 20px; border-radius:12px; font-weight:700; }
-    .logo-rodape{ display:block; margin:10px auto 0; opacity:.9; max-width:220px; }
-    @media (max-width:480px){
-      .msg{ font-size:15px; }
-    }
+    .row button.send { background:#117a51; color:#fff; border:none; border-radius:12px; padding:12px 18px; font-weight:700; min-width:108px; }
+    .muted { color: var(--muted); font-size:13px; margin-top:8px; }
+    .notice { background:#fff3cd; border:1px solid #ffe08a; color:#664d03; padding:10px 12px; border-radius:10px; margin:10px 0 0; }
+    .hidden { display:none !important; }
   </style>
 </head>
 <body>
   <header>
-    <img class="banner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas" />
-    <h1>Queimadas Telemedicina</h1>
+    <div class="brand">
+      <div class="banner" role="img" aria-label="Queimadas - banner"></div>
+      <h1>Queimadas Telemedicina</h1>
+    </div>
   </header>
 
-  <main class="wrap">
-    <section class="chat" id="chat"></section>
-
-    <div class="rodape">
-      <label class="filebtn">
-        Enviar arquivo
-        <input id="file" type="file" accept="image/*,.pdf,.jpg,.jpeg,.png" />
-      </label>
-      <input id="msg" class="inpt" placeholder="Escreva sua resposta..." />
-      <button id="send" class="send">Enviar</button>
+  <main>
+    <div id="redirNotice" class="notice hidden"></div>
+    <div class="chat-card">
+      <div id="chatBox" aria-live="polite"></div>
+      <div class="row">
+        <button class="file-btn" id="fileBtn" type="button">Enviar arquivo</button>
+        <input id="chatInput" type="text" placeholder="Escreva sua resposta..." autocomplete="off">
+        <button id="sendBtn" class="send" type="button">Enviar</button>
+      </div>
+      <div class="muted">Por segurança, a sala expira após 3 minutos de inatividade.</div>
     </div>
-
-    <img class="logo-rodape" src="atende-mais.png" alt="Atende Mais" />
   </main>
 
   <script>
-    // ====== Config ======
-    const API_BASE = "https://remedy-queimadas-api.onrender.com";
-// Sessão & segurança
-const MAX_IDLE_MS = 3*60*1000;
-const sessionId = localStorage.getItem("sessionId") || "";
-const cameFromReception = localStorage.getItem("cameFromReception") === "1";
-const sessionStart = parseInt(localStorage.getItem("sessionStart")||"0",10) || 0;
-const especialidadeLS = localStorage.getItem("especialidade") || "";
-    const ESPECIALIDADE = (especialidadeLS || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
+    // Você pode sobrescrever via <script> window.API_BASE = "https://seu-servico.onrender.com" </script> antes deste script.
+    window.API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
 
-    // ====== Estado ======
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("msg");
-    const sendBtn = document.getElementById("send");
-    const fileInput = document.getElementById("file");
+    const THREE_MIN = 3 * 60 * 1000;
+    let consultId = null;
+    let history = [];
+    let patientMeta = {};
+    let idleTimer = null;
 
-    const historico = []; // {role, content}
-let caseClosed=false;
-    let indicador;
+    const box = document.querySelector("#chatBox");
+    const input = document.querySelector("#chatInput");
+    const sendBtn = document.querySelector("#sendBtn");
+    const fileBtn = document.querySelector("#fileBtn");
+    const notice = document.querySelector("#redirNotice");
 
-    function addMsg(role, text){
-  try{ const cid = localStorage.getItem('consultId'); if(cid){ fetch(API_BASE+'/history/msg',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ consultId: cid, role, content: text })}); } }catch(_e){}
-
-      const div = document.createElement("div");
-      div.className = "msg " + (role === "assistant" ? "m-med" : "m-user");
-      div.textContent = displayText;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-
-// Remoção de assinatura/status no chat do paciente
-let displayText = text;
-const assinaturaRe = /\*?Assinatura digital:.*?(\n|$)/i;
-const statusRe = /\[STATUS:[^\]]*\]/i;
-const temAss = assinaturaRe.test(text);
-const temStatus = statusRe.test(text);
-if(temAss) displayText = displayText.replace(assinaturaRe, "");
-if(temStatus) displayText = displayText.replace(statusRe, "");
-
-
-// Enfileirar uma única vez por sessão
-try{
-  const key = "docSent:"+(localStorage.getItem("sessionId")||"");
-  const jaEnviado = sessionStorage.getItem(key)==="1";
-  if(role==="assistant" && temStatus && !jaEnviado){
-    const pacienteNome = localStorage.getItem('pacienteNome')||"";
-    const pacienteCPF = (localStorage.getItem('pacienteCPF')||"").replace(/\D/g,"");
-    let conteudo = text;
-    if(!temAss){ conteudo = conteudo.replace(/\s*$/, "\nAssinatura digital: aguardando validação do médico humano\n"); }
-    if(!temStatus){ conteudo += "[STATUS: aguardando receita]"; }
-    fetch(API_BASE+"/admin/docs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tipo:"receita",pacienteNome,pacienteCPF,conteudo})})
-      .then(()=>sessionStorage.setItem(key,"1")).catch(()=>{});
-  }
-}catch(e){}
-
+    function addMsg(role, text) {
+      const el = document.createElement("div");
+      el.className = role === "assistant" ? "msg bot" : "msg user";
+      el.textContent = text;
+      box.appendChild(el);
+      box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
     }
-    function status(txt){
-      clearStatus();
-      indicador = document.createElement("div");
-      indicador.className = "status";
-      indicador.textContent = txt;
-      chat.appendChild(indicador);
-      chat.scrollTop = chat.scrollHeight;
+    const addBot  = (t)=>addMsg("assistant", t);
+    const addUser = (t)=>addMsg("user", t);
+
+    function setDisabled(v) {
+      input.disabled = !!v;
+      sendBtn.disabled = !!v;
+      fileBtn.disabled = !!v;
     }
-    function clearStatus(){
-      if (indicador && indicador.parentNode){
-        indicador.parentNode.removeChild(indicador);
+
+    function readReceptionNotice() {
+      const n = localStorage.getItem("reimed_notice");
+      if (n) {
+        notice.textContent = n;
+        notice.classList.remove("hidden");
+        localStorage.removeItem("reimed_notice");
       }
     }
-    function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
-    async function pensandoEDigitando(texto){
-      const chars = Math.max(10, String(texto||"").length);
-      const pensar = Math.min(6000, Math.max(2500, Math.round(chars * 30)));
-      status("Médico pensando…");
-      await delay(pensar);
-      status("Médico digitando…");
-      await delay(Math.min(3500, Math.max(1200, Math.round(chars * 15))));
-      clearStatus();
+    function expireSession(redirect) {
+      clearTimeout(idleTimer);
+      setDisabled(true);
+      sessionStorage.removeItem("reimed_consult");
+      if (redirect) {
+        localStorage.setItem("reimed_notice","Sua sessão expirou. Volte à recepção para iniciar uma nova consulta.");
+        window.location.href = "index.html";
+      } else {
+        addBot("Sessão expirada. Volte à recepção para iniciar uma nova consulta.");
+      }
     }
-
-    async function acordarServidor(){
-      const ctrl = new AbortController();
-      const t = setTimeout(()=>ctrl.abort(), 12000);
-      try { await fetch(`${API_BASE}/health`, { signal: ctrl.signal }); }
-      catch(e){ /* tudo bem, seguimos */ }
-      finally { clearTimeout(t); }
+    function refreshIdle() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(()=>expireSession(false), THREE_MIN);
     }
+    document.addEventListener("visibilitychange", ()=>{
+      if (document.visibilityState === "visible") refreshIdle();
+    });
 
-    async function chamarIA(){
-      const body = {
-        specialty: ESPECIALIDADE,
-        history: historico,
-        patientMeta: {}
+    async function boot() {
+      readReceptionNotice();
+      refreshIdle();
+
+      // Paciente vindo da recepção
+      const p = JSON.parse(sessionStorage.getItem("reimed_patient") || "null");
+      if (!p || !p.cpf) return expireSession(true);
+
+      patientMeta = {
+        cpf: String(p.cpf).replace(/\D/g,""),
+        name: p.nome || "",
+        age: p.idade || "",
+        weight: p.peso || "",
+        allergies: p.alergias || "",
+        specialty: p.especialidade || "Clínico Geral"
       };
-      const resp = await fetch(`${API_BASE}/api/medico/chat`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(body)
-      });
-      if(!resp.ok) throw new Error("Falha ao contatar IA");
-      const data = await resp.json();
-      if(!data.ok) throw new Error("IA indisponível");
-      return data.reply;
+
+      try {
+        const r = await fetch(`${API_BASE}/history/start`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            cpf: patientMeta.cpf,
+            specialty: patientMeta.specialty,
+            sessionId: (crypto?.randomUUID?.() || String(Date.now()))
+          })
+        });
+        const j = await r.json();
+        if (!j.ok || !j.consultId) throw new Error("start failed");
+        consultId = j.consultId;
+        sessionStorage.setItem("reimed_consult", JSON.stringify({ id: consultId, startedAt: Date.now() }));
+
+        addBot("Olá! Sou o médico. Para prescrever com segurança, preciso confirmar sua idade, peso e alergias. Podemos começar?");
+        setDisabled(false);
+      } catch (e) {
+        expireSession(true);
+      }
     }
 
-    async function enviarTexto(){
-  if(Date.now() - (window.__lastActivity||Date.now()) > MAX_IDLE_MS){ alert("Sessão expirada. Voltando para a recepção."); location.replace("receptionist.html"); return; }
-  if(caseClosed){ historico.push({role:"system", content:"Caso encerrado: responder somente dúvidas sobre a doença atual e medicamentos. Não gerar nova receita, exceto se for solicitado TROCA DE RECEITA."}); }
-
+    async function send() {
+      refreshIdle();
       const txt = (input.value || "").trim();
-      if(!txt) return;
-      historico.push({ role:"user", content: txt });
-      addMsg("user", txt);
+      if (!txt) return;
+      addUser(txt);
       input.value = "";
-      try{
-        const resposta = await chamarIA();
-        await pensandoEDigitando(resposta);
-        historico.push({ role:"assistant", content: resposta });
-        addMsg("assistant", resposta);
-      }catch(e){
-        addMsg("assistant", "Não consegui contato com o servidor agora. Vamos tentar novamente em alguns segundos. Se persistir, volte para a recepção.");
-        console.error(e);
+      setDisabled(true);
+
+      history.push({ role:"user", content: txt });
+
+      // tenta registrar mensagem (não bloqueia)
+      if (consultId) {
+        fetch(`${API_BASE}/history/msg`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ consultId, role:"user", content: txt })
+        }).catch(()=>{});
+      }
+
+      try {
+        const r = await fetch(`${API_BASE}/api/medico/chat`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ history, patientMeta, specialty: patientMeta.specialty })
+        });
+        const j = await r.json();
+        if (!j.ok) throw new Error("chat failed");
+        const reply = j.reply || "Desculpe, estou indisponível agora.";
+        history.push({ role:"assistant", content: reply });
+
+        if (consultId) {
+          fetch(`${API_BASE}/history/msg`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ consultId, role:"assistant", content: reply })
+          }).catch(()=>{});
+        }
+        addBot(reply);
+      } catch (e) {
+        addBot("Não consegui contato com o servidor agora. Voltaremos à recepção...");
+        setTimeout(()=>expireSession(true), 1400);
+      } finally {
+        setDisabled(false);
       }
     }
 
-    // Upload "simples" (local) – o arquivo não vai para o servidor nesta versão.
-    fileInput.addEventListener("change", async (ev)=>{
-      const f = ev.target.files?.[0];
-      if(!f) return;
-      addMsg("assistant", "Arquivos recebidos. Obrigado! (análise em breve)");
-      historico.push({ role:"user", content:`[Paciente informa que enviou um arquivo: ${f.name} (${Math.round(f.size/1024)} KB). Oriente a enviar fotos nítidas/boas se necessário e siga com a anamnese.]` });
-      try{
-        const resposta = await chamarIA();
-        await pensandoEDigitando(resposta);
-        historico.push({ role:"assistant", content: resposta });
-        addMsg("assistant", resposta);
-      }catch(e){
-        addMsg("assistant", "Parece que houve um problema no contato com o servidor. Poderia tentar novamente?");
-      }finally{
-        fileInput.value = "";
-      }
-    });
+    sendBtn.addEventListener("click", send);
+    input.addEventListener("keydown", (ev)=>{ if (ev.key === "Enter") send(); refreshIdle(); });
+    fileBtn.addEventListener("click", ()=>refreshIdle());
+    box.addEventListener("scroll", refreshIdle);
 
-    sendBtn.addEventListener("click", enviarTexto);
-    input.addEventListener("keydown", (e)=>{
-      if(e.key === "Enter"){ enviarTexto(); }
-    });
-
-    // Fluxo inicial
-    (async () => {
-      // banner inicial
-      const saud = "Olá, sou o Médico de " + ESPECIALIDADE + ". Vou dar continuidade ao seu atendimento.";
-      addMsg("assistant", saud);
-      historico.push({ role:"assistant", content: saud });
-
-      try{
-        status("Preparando seu atendimento…");
-        await acordarServidor();
-
-        // Médico inicia com uma primeira pergunta objetiva
-        historico.push({ role:"user", content: "Inicie a consulta com uma pergunta objetiva sobre o motivo da consulta. Lembre de usar linguagem simples e apenas UMA pergunta." });
-        const primeira = await chamarIA();
-        await pensandoEDigitando(primeira);
-        historico.push({ role:"assistant", content: primeira });
-        addMsg("assistant", primeira);
-      }catch(e){
-        addMsg("assistant", "Não consegui contato com o servidor agora. Vamos tentar novamente em alguns segundos. Se persistir, volte para a recepção.");
-        console.error(e);
-      }finally{
-        clearStatus();
-      }
-    })();
+    boot();
   </script>
 </body>
 </html>
