@@ -1,234 +1,142 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Área do Médico Administrador</title>
   <style>
-    :root{
-      --bg:#0f2e46; --ok:#117a51; --danger:#7a1523; --ink:#0b2233; --muted:#5b6b79; --card:#ffffff;
-    }
+    :root{--azul:#0f3446;--borda:#d9e5ee;--cinza:#f4f7fb;--verde:#127c52}
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f4f7fb;color:var(--ink)}
-    header{background:var(--bg);color:#fff}
-    .wrap{max-width:1100px;margin:0 auto;padding:12px}
-    .brandbar{display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px;padding:8px;margin:6px 0 10px}
-    .brandbar img{max-height:74px;height:auto;display:block}
-    .title{display:flex;align-items:center;justify-content:space-between}
-    .btn{border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-    .btn-plain{background:#e9f1f7;color:#133b52}
-    main{max-width:1100px;margin:12px auto;padding:0 12px}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 12px}
-    input[type=date],input[type=text]{padding:8px 10px;border:1px solid #cfe0ec;border-radius:8px}
-    .btn-blue{background:#2f6ea3;color:#fff}
-    .btn-ok{background:var(--ok);color:#fff}
-    .btn-danger{background:var(--danger);color:#fff}
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 12px}
-    .card{background:var(--card);border:1px solid #e6eef4;border-radius:12px;padding:12px;box-shadow:0 4px 12px rgba(10,30,50,.06)}
-    .card h3{margin:0 0 6px;font-size:14px;color:#425c6f}
-    .card .v{font-size:20px;font-weight:800}
-    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e6eef4;border-radius:12px;overflow:hidden}
-    th,td{padding:10px;border-bottom:1px solid #eef4f8;font-size:14px}
-    th{background:#f7fbff;text-align:left;color:#35556e}
-    .row-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px}
-    .b-pendente{background:#fff4d6;color:#5d4906}
-    .b-aprovado{background:#e8fff3;color:#0c5f3b}
-    .b-rejeitado{background:#ffe8e6;color:#7a1523}
-    /* Modais */
-    .modal{position:fixed;inset:0;background:rgba(12,22,32,.62);display:none;align-items:center;justify-content:center;z-index:50}
-    .modal .box{background:#fff;border-radius:12px;max-width:820px;width:92vw;padding:16px}
-    .box h3{margin:0 0 10px}
-    .box textarea{width:100%;min-height:240px;padding:10px;border:1px solid #cfe0ec;border-radius:8px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-    .box .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-    footer{max-width:1100px;margin:16px auto 28px;padding:0 12px;text-align:center}
-    .partner{background:#fff;border:1px solid #e6eef4;border-radius:12px;padding:10px}
-    .partner img{max-height:54px;height:auto}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--cinza)}
+    header{background:var(--azul);color:#fff;padding:22px 16px}
+    header .row{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:14px}
+    header img{height:44px;object-fit:contain}
+    header h1{margin:0;font-size:1.5rem}
+    main{max-width:1100px;margin:22px auto;padding:0 16px}
+    .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+    input, button, select{border:1px solid var(--borda);border-radius:10px;padding:10px 12px}
+    button{background:var(--azul);color:#fff;border:none;cursor:pointer}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+    .kpi{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:12px;text-align:center}
+    .kpi b{font-size:1.4rem;display:block;margin-top:6px}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--borda);border-radius:12px;overflow:hidden}
+    th,td{padding:10px;border-bottom:1px solid var(--borda);font-size:.95rem}
+    th{background:#f8fbff;text-align:left}
+    td .btn{background:#0f3446;color:#fff;border:none;border-radius:8px;padding:6px 10px;margin:2px;cursor:pointer}
+    .right{margin-left:auto}
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <div class="brandbar">
-        <!-- Mostra o logo de Queimadas. Se a imagem não existir, permanece a faixa azul. -->
-        <img src="img/logo-queimadas.png" alt="Prefeitura de Queimadas">
-      </div>
-      <div class="title">
-        <h2>Área do Médico Administrador</h2>
-        <button id="logout" class="btn btn-plain">Sair</button>
-      </div>
-    </div>
-  </header>
+<header>
+  <div class="row">
+    <img src="img/logo-queimadas.png" onerror="this.style.display='none'"/>
+    <h1>Área do Médico Administrador</h1>
+    <span class="right"></span>
+    <button onclick="logout()">Sair</button>
+  </div>
+</header>
 
-  <main>
-    <!-- Linha de filtros + impressão período -->
-    <div class="toolbar">
-      <label>Buscar histórico por CPF
-        <input id="cpfHist1" type="text" placeholder="Somente números" inputmode="numeric">
-      </label>
-      <button id="btnHist1" class="btn btn-plain">Buscar histórico</button>
-      <label>Período inicial <input type="date" id="dIni"></label>
-      <label>Período final <input type="date" id="dFim"></label>
-      <button id="buscar" class="btn btn-ok">Buscar</button>
-      <button id="printPeriodo" class="btn btn-blue">Imprimir PDFs do período</button>
-    </div>
-
-    <!-- Linha 2 -->
-    <div class="toolbar">
-      <label>Buscar histórico por CPF
-        <input id="cpfHist2" type="text" placeholder="Somente números" inputmode="numeric">
-      </label>
-      <button id="btnHist2" class="btn btn-plain">Buscar histórico</button>
-    </div>
-
-    <!-- Cards -->
-    <div class="stats">
-      <div class="card"><h3>Total</h3><div id="sTotal" class="v">0</div></div>
-      <div class="card"><h3>Pendentes</h3><div id="sPend" class="v">0</div></div>
-      <div class="card"><h3>Aprovados</h3><div id="sAprov" class="v">0</div></div>
-      <div class="card"><h3>Rejeitados</h3><div id="sRej" class="v">0</div></div>
-    </div>
-
-    <!-- Tabela -->
-    <table>
-      <thead>
-        <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-  </main>
-
-  <footer>
-    <div class="partner">
-      <!-- Logo do Atende+ no rodapé -->
-      <img src="img/logo-atendemais.png" alt="Atende+">
-    </div>
-  </footer>
-
-  <!-- Modal Ver/Editar -->
-  <div class="modal" id="mView">
-    <div class="box">
-      <h3 id="mTitle">Documento</h3>
-      <textarea id="mText"></textarea>
-      <div class="actions">
-        <button class="btn btn-plain" id="mClose">Fechar</button>
-      </div>
-    </div>
+<main>
+  <div class="bar">
+    <label>Período inicial <input type="date" id="dini"></label>
+    <label>Período final <input type="date" id="dfim"></label>
+    <button onclick="loadDocs()">Buscar</button>
+    <button onclick="printPeriod()">Imprimir PDFs do período</button>
   </div>
 
-  <script>
-    // Backend (pode sobrescrever antes com window.API_BASE)
-    const API = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
+  <div class="grid">
+    <div class="kpi">Total<b id="kTotal">0</b></div>
+    <div class="kpi">Pendentes<b id="kPend">0</b></div>
+    <div class="kpi">Aprovados<b id="kAprov">0</b></div>
+    <div class="kpi">Rejeitados<b id="kRej">0</b></div>
+  </div>
 
-    // Util
-    const rows = document.querySelector("#rows");
-    const sTotal = document.querySelector("#sTotal");
-    const sPend  = document.querySelector("#sPend");
-    const sAprov = document.querySelector("#sAprov");
-    const sRej   = document.querySelector("#sRej");
-    const modal = (el,show)=> el.style.display = show ? "flex" : "none";
-    const token = ()=> sessionStorage.getItem("reimed_admin_token") || "";
-    const hdr = ()=> ({ "Content-Type":"application/json", "Authorization":"Bearer "+token() });
+  <table id="tbl">
+    <thead>
+      <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</main>
 
-    function b(status){
-      const map = {pendente:'b-pendente', aprovado:'b-aprovado', rejeitado:'b-rejeitado'};
-      return `<span class="badge ${map[status]||'b-pendente'}">${status||'pendente'}</span>`;
+<script>
+  const DEFAULT_API = "https://remedy-queimadas-api.onrender.com";
+  const API_BASE = window.API_BASE || DEFAULT_API;
+
+  const $ = s=>document.querySelector(s);
+
+  function logout(){
+    location.href = "index.html";
+  }
+
+  async function loadDocs(){
+    const dini = $("#dini").value, dfim = $("#dfim").value;
+    let url = `${API_BASE}/admin/docs`;
+    const qs = [];
+    if(dini) qs.push(`from=${dini}`);
+    if(dfim) qs.push(`to=${dfim}`);
+    if(qs.length) url += `?${qs.join("&")}`;
+
+    let list = [];
+    try{
+      const r = await fetch(url, {mode:"cors"});
+      if(!r.ok) throw new Error("fail");
+      list = await r.json();
+    }catch(e){
+      // fallback: lista vazia
+      list = [];
     }
-    function row(d){
-      return `<tr>
-        <td>${d.id}</td>
-        <td>${d.paciente||"-"}</td>
-        <td>${d.cpf||"-"}</td>
-        <td>${d.tipo||"receita"}</td>
-        <td>${b(d.status)}</td>
-        <td>${new Date(d.data||d.created_at||Date.now()).toLocaleString()}</td>
-        <td class="row-actions">
-          <button class="btn btn-plain" data-a="ver" data-id="${d.id}">Ver/Editar</button>
-          <button class="btn btn-ok" data-a="aprovar" data-id="${d.id}">Aprovar</button>
-          <button class="btn btn-danger" data-a="rejeitar" data-id="${d.id}">Rejeitar</button>
-          <button class="btn btn-blue" data-a="print" data-id="${d.id}">Imprimir</button>
-        </td>
-      </tr>`;
-    }
+    const tb = $("#tbl tbody"); tb.innerHTML = "";
+    let total=0, pend=0, aprov=0, rej=0;
+    list.forEach(doc=>{
+      total++;
+      if(doc.status==="pendente") pend++;
+      else if(doc.status==="aprovado") aprov++;
+      else if(doc.status==="rejeitado") rej++;
 
-    async function load(){
-      rows.innerHTML = "<tr><td colspan='7'>Carregando…</td></tr>";
-      try{
-        const q = new URLSearchParams();
-        const di = document.querySelector("#dIni").value; if (di) q.set("from", di);
-        const df = document.querySelector("#dFim").value; if (df) q.set("to", df);
-        const r = await fetch(API+"/admin/docs?"+q.toString(), { headers: hdr() });
-        const j = await r.json();
-        const list = j.items || j.docs || [];
-        sTotal.textContent = list.length;
-        sPend.textContent  = list.filter(x=>x.status==="pendente").length;
-        sAprov.textContent = list.filter(x=>x.status==="aprovado").length;
-        sRej.textContent   = list.filter(x=>x.status==="rejeitado").length;
-        rows.innerHTML = list.map(row).join("") || "<tr><td colspan='7'>Nada encontrado.</td></tr>";
-      }catch(e){
-        rows.innerHTML = "<tr><td colspan='7'>Falha ao carregar.</td></tr>";
-      }
-    }
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${doc.id||"-"}</td>
+        <td>${doc.patient_name||"-"}</td>
+        <td>${doc.cpf||"-"}</td>
+        <td>${doc.type||"receita"}</td>
+        <td>${doc.status||"pendente"}</td>
+        <td>${doc.created_at||"-"}</td>
+        <td>
+          <button class="btn" onclick="viewDoc(${doc.id})">Ver/Editar</button>
+          <button class="btn" onclick="approveDoc(${doc.id})">Aprovar</button>
+          <button class="btn" onclick="rejectDoc(${doc.id})">Rejeitar</button>
+          <button class="btn" onclick="printDoc(${doc.id})">Imprimir</button>
+        </td>`;
+      tb.appendChild(tr);
+    });
+    $("#kTotal").textContent = total;
+    $("#kPend").textContent = pend;
+    $("#kAprov").textContent = aprov;
+    $("#kRej").textContent = rej;
+  }
 
-    // Handlers da tabela
-    const mView = document.querySelector("#mView");
-    const mTitle= document.querySelector("#mTitle");
-    const mText = document.querySelector("#mText");
-    document.querySelector("#mClose").onclick = ()=> modal(mView,false);
+  function printPeriod(){
+    window.print();
+  }
 
-    rows.onclick = async (ev)=>{
-      const a = ev.target.dataset.a;
-      const id= ev.target.dataset.id;
-      if(!a||!id) return;
-      if (a==="ver"){
-        const r = await fetch(API+"/admin/doc/"+id, { headers: hdr() });
-        const j = await r.json();
-        mTitle.textContent = `Documento #${id} — ${j.tipo||"receita"}`;
-        mText.value = j.texto || j.content || "";
-        modal(mView,true);
-      }
-      if (a==="aprovar"){
-        await fetch(API+"/admin/doc/"+id+"/approve", { method:"POST", headers: hdr(), body:"{}" });
-        load();
-      }
-      if (a==="rejeitar"){
-        await fetch(API+"/admin/doc/"+id+"/reject", { method:"POST", headers: hdr(), body:"{}" });
-        load();
-      }
-      if (a==="print"){
-        window.open(API+"/admin/doc/"+id+"/pdf?token="+encodeURIComponent(token()), "_blank");
-      }
-    };
+  async function viewDoc(id){
+    alert("Abrir editor simplificado do documento "+id+" (a UI completa continua no seu backend).");
+  }
+  async function approveDoc(id){
+    try{ await fetch(`${API_BASE}/admin/docs/${id}/approve`, {method:"POST"}); }catch(e){}
+    loadDocs();
+  }
+  async function rejectDoc(id){
+    try{ await fetch(`${API_BASE}/admin/docs/${id}/reject`, {method:"POST"}); }catch(e){}
+    loadDocs();
+  }
+  function printDoc(id){
+    window.open(`${API_BASE}/admin/docs/${id}/pdf`, "_blank");
+  }
 
-    // Histórico rápido por CPF (via alert simples)
-    async function openHist(cpf){
-      if (!cpf) return;
-      const url = API + "/admin/history?cpf=" + encodeURIComponent(cpf);
-      try{
-        const r = await fetch(url, { headers: hdr() });
-        const j = await r.json();
-        alert((j.texto || j.history || j.content || JSON.stringify(j,null,2)).slice(0,5000));
-      }catch(e){
-        alert("Falha ao carregar histórico.");
-      }
-    }
-    function onlyDigits(s){ return String(s||'').replace(/\\D/g,''); }
-    document.querySelector("#btnHist1").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHist1").value));
-    document.querySelector("#btnHist2").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHist2").value));
-
-    // Buscar & imprimir período
-    document.querySelector("#buscar").onclick = load;
-    document.querySelector("#printPeriodo").onclick = ()=>{
-      const di = document.querySelector("#dIni").value || "";
-      const df = document.querySelector("#dFim").value || "";
-      window.open(API+`/admin/periodo/pdf?from=${encodeURIComponent(di)}&to=${encodeURIComponent(df)}&token=${encodeURIComponent(token())}`, "_blank");
-    };
-
-    // Sair
-    document.querySelector("#logout").onclick = ()=>{ sessionStorage.removeItem("reimed_admin_token"); location.href = "admin.html"; };
-
-    // Load inicial
-    load();
-  </script>
+  // auto carregar ao abrir
+  loadDocs();
+</script>
 </body>
 </html>
