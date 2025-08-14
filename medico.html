@@ -1,92 +1,57 @@
-<!doctype html>
+<script>window.API_BASE="https://remedy-queimadas-api.onrender.com";window.RECEPTION_PATH="index.html";</script><!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Queimadas Telemedicina — Médico</title>
   <style>
-    :root {
-      --bg:#0f2e46; --fg:#0b2233; --card:#f3f7fb; --accent:#0a7a4b; --muted:#6b7b8c;
-    }
-    * { box-sizing: border-box; }
+    :root { --bg:#0f2e46; --card:#f3f7fb; --muted:#6b7b8c; }
+    * { box-sizing: border-box }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f1f5f9; color:#0b2233; }
-    header { background: var(--bg); color:#fff; padding:16px 12px 10px; text-align:center; }
-    .brand { max-width:980px; margin:0 auto; }
-    h1 { margin:0 0 4px; font-size:28px; line-height:1.2; }
-    main { max-width:980px; margin:18px auto; padding:0 12px 28px; }
-    .chat-card {
-      background:var(--card); border-radius:16px; padding:14px; min-height:420px;
-      box-shadow: 0 6px 20px rgba(2,23,38,0.06), 0 2px 6px rgba(2,23,38,0.05);
-    }
-    #chatBox {
-      background:#fff; border-radius:14px; height:54vh; min-height:360px; overflow:auto;
-      padding:14px 12px; border:1px solid #e5edf4;
-    }
-    .msg { max-width:86%; padding:10px 12px; margin:8px 0; border-radius:14px; line-height:1.4; white-space:pre-wrap; }
-    .msg.user { margin-left: auto; background:#dff4ff; border:1px solid #c9e7f7; }
-    .msg.bot  { margin-right: auto; background:#f7fafc; border:1px solid #e7eef5; }
-    .row { display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap; }
-    .row .file-btn { background:#0f2e46; color:#fff; border:none; padding:14px 18px; border-radius:12px; font-weight:600; }
-    .row input[type="text"] {
-      flex:1; border:1px solid #cfe0ec; background:#fff; border-radius:12px; padding:12px 14px; min-height:46px;
-      outline:none; font-size:16px;
-    }
-    .row button.send { background:#117a51; color:#fff; border:none; border-radius:12px; padding:12px 18px; font-weight:700; min-width:108px; }
-    .muted { color: var(--muted); font-size:13px; margin-top:8px; }
-
-    .notice { background:#fff3cd; border:1px solid #ffe08a; color:#664d03; padding:10px 12px; border-radius:10px; margin:10px 0 0; }
-    .error  { background:#fde2e1; border:1px solid #f5a7a1; color:#7d2621; padding:10px 12px; border-radius:10px; margin:14px 0; }
-
-    .overlay {
-      position:fixed; inset:0; background:rgba(14,30,45,.6); display:flex; align-items:center; justify-content:center; z-index:20;
-    }
-    .card {
-      background:#fff; border-radius:16px; padding:18px 16px; width:min(92vw, 460px);
-      box-shadow:0 10px 30px rgba(3,22,37,.25);
-      text-align:center;
-    }
-    .spinner { width:44px; height:44px; border:4px solid #e5edf4; border-top-color:#117a51; border-radius:50%; margin:0 auto 12px; animation:spin 1s linear infinite; }
-    @keyframes spin{ to { transform: rotate(360deg); } }
-    .hidden { display:none !important; }
-    .btn { background:#0f2e46; color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:600; }
+    header { background:var(--bg); color:#fff; padding:16px 12px 10px; text-align:center }
+    h1 { margin:0; font-size:26px }
+    main { max-width:980px; margin:18px auto; padding:0 12px 28px }
+    .chat-card { background:var(--card); border-radius:16px; padding:14px; min-height:420px; box-shadow:0 6px 20px rgba(2,23,38,.06) }
+    #chatBox { background:#fff; border-radius:14px; height:54vh; min-height:360px; overflow:auto; padding:14px 12px; border:1px solid #e5edf4 }
+    .msg { max-width:86%; padding:10px 12px; margin:8px 0; border-radius:14px; line-height:1.4; white-space:pre-wrap }
+    .msg.user { margin-left:auto; background:#dff4ff; border:1px solid #c9e7f7 }
+    .msg.bot { margin-right:auto; background:#f7fafc; border:1px solid #e7eef5 }
+    .row { display:flex; gap:10px; align-items:center; margin-top:14px }
+    .row input[type=text] { flex:1; border:1px solid #cfe0ec; border-radius:12px; padding:12px 14px; min-height:46px; font-size:16px }
+    .row button { background:#117a51; color:#fff; border:none; border-radius:12px; padding:12px 18px; font-weight:700; min-width:108px }
+    .muted{ color:var(--muted); font-size:13px; margin-top:8px }
+    /* Loader */
+    .overlay{ position:fixed; inset:0; background:rgba(14,30,45,.6); display:flex; align-items:center; justify-content:center; z-index:20 }
+    .card{ background:#fff; border-radius:16px; padding:18px 16px; width:min(92vw, 460px); text-align:center; box-shadow:0 10px 30px rgba(3,22,37,.25) }
+    .spinner{ width:44px; height:44px; border:4px solid #e5edf4; border-top-color:#117a51; border-radius:50%; margin:0 auto 12px; animation:spin 1s linear infinite }
+    @keyframes spin{ to{ transform: rotate(360deg) } }
+    .hidden{ display:none!important }
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <h1>Queimadas Telemedicina</h1>
-    </div>
-  </header>
+  <header><h1>Queimadas Telemedicina</h1></header>
 
   <main>
-    <div id="redirNotice" class="notice hidden"></div>
     <div class="chat-card">
       <div id="chatBox" aria-live="polite"></div>
-      <div id="netError" class="error hidden"></div>
       <div class="row">
-        <button class="file-btn" id="fileBtn" type="button">Enviar arquivo</button>
         <input id="chatInput" type="text" placeholder="Escreva sua resposta..." autocomplete="off">
-        <button id="sendBtn" class="send" type="button">Enviar</button>
+        <button id="sendBtn" type="button">Enviar</button>
       </div>
       <div class="muted">Por segurança, a sala expira após 3 minutos de inatividade.</div>
     </div>
   </main>
 
-  <!-- Loader / fallback -->
   <div id="loader" class="overlay">
     <div class="card">
       <div class="spinner"></div>
       <div id="loaderText" style="font-weight:700; margin-bottom:8px;">Preparando a sala com o médico…</div>
       <div id="loaderSub" style="color:#426079; font-size:14px">Isso leva só alguns segundos.</div>
-      <div style="margin-top:14px;">
-        <button id="goReception" class="btn" style="background:#7a1523">Voltar à recepção agora</button>
-      </div>
     </div>
   </div>
 
   <script>
-    // Ajuste aqui se quiser fixar o endpoint explicitamente:
-    // window.API_BASE = "https://SEU-SERVICO.onrender.com";
+    // Endpoints padrão (pode ser sobrescrito antes deste script se necessário)
     window.API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
     window.RECEPTION_PATH = window.RECEPTION_PATH || "index.html";
 
@@ -99,167 +64,105 @@
     const box = document.querySelector("#chatBox");
     const input = document.querySelector("#chatInput");
     const sendBtn = document.querySelector("#sendBtn");
-    const fileBtn = document.querySelector("#fileBtn");
-    const notice = document.querySelector("#redirNotice");
     const loader = document.querySelector("#loader");
-    const loaderText = document.querySelector("#loaderText");
-    const loaderSub = document.querySelector("#loaderSub");
-    const netError = document.querySelector("#netError");
-    const goReception = document.querySelector("#goReception");
 
-    function addMsg(role, text) {
+    const addMsg = (role, text) => {
       const el = document.createElement("div");
       el.className = role === "assistant" ? "msg bot" : "msg user";
       el.textContent = text;
       box.appendChild(el);
       box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
-    }
-    const addBot  = (t)=>addMsg("assistant", t);
-    const addUser = (t)=>addMsg("user", t);
+    };
+    const addBot = (t)=>addMsg("assistant", t);
+    const addUser= (t)=>addMsg("user", t);
+    const setDisabled = (v)=>{ input.disabled=v; sendBtn.disabled=v; };
 
-    function setDisabled(v) {
-      input.disabled = !!v;
-      sendBtn.disabled = !!v;
-      fileBtn.disabled = !!v;
-    }
-
-    function showLoader(show, text, sub) {
-      if (text) loaderText.textContent = text;
-      if (sub) loaderSub.textContent = sub;
-      loader.classList[show ? "remove" : "add"]("hidden");
-    }
-
-    function toReception(msg) {
+    function toReception(msg){
       if (msg) localStorage.setItem("reimed_notice", msg);
       window.location.href = window.RECEPTION_PATH;
     }
-
-    function readReceptionNotice() {
-      const n = localStorage.getItem("reimed_notice");
-      if (n) {
-        notice.textContent = n;
-        notice.classList.remove("hidden");
-        localStorage.removeItem("reimed_notice");
-      }
-    }
-
-    function expireSession(redirect) {
+    function expireSession(){
       clearTimeout(idleTimer);
       setDisabled(true);
       sessionStorage.removeItem("reimed_consult");
-      if (redirect) {
-        toReception("Sua sessão expirou. Volte à recepção para iniciar uma nova consulta.");
-      } else {
-        addBot("Sessão expirada. Volte à recepção para iniciar uma nova consulta.");
-      }
+      toReception("Sua sessão expirou. Volte à recepção para iniciar uma nova consulta.");
     }
-    function refreshIdle() {
+    function refreshIdle(){
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(()=>expireSession(true), THREE_MIN);
+      idleTimer = setTimeout(expireSession, THREE_MIN);
     }
     document.addEventListener("visibilitychange", ()=>{
       if (document.visibilityState === "visible") refreshIdle();
     });
-    goReception.addEventListener("click", ()=> toReception("Você voltou para a recepção."));
 
-    async function boot() {
-      readReceptionNotice();
+    async function boot(){
       setDisabled(true);
-      showLoader(true, "Preparando a sala com o médico…", "Isso leva só alguns segundos.");
       refreshIdle();
-
       const p = JSON.parse(sessionStorage.getItem("reimed_patient") || "null");
-      if (!p || !p.cpf) {
-        showLoader(true, "Não achei sua identificação.", "Vamos voltar à recepção para continuar.");
-        return setTimeout(()=>toReception("Identifique-se na recepção para iniciar a consulta."), 1200);
-      }
+      if (!p || !p.cpf) return toReception("Identifique-se na recepção para iniciar a consulta.");
 
       patientMeta = {
-        cpf: String(p.cpf).replace(/\D/g,""),
-        name: p.nome || "",
-        age: p.idade || "",
-        weight: p.peso || "",
-        allergies: p.alergias || "",
-        specialty: p.especialidade || "Clínico Geral"
+        cpf: String(p.cpf).replace(/\\D/g,""),
+        name: p.nome || "", age: p.idade || "", weight: p.peso || "",
+        allergies: p.alergias || "", specialty: p.especialidade || "Clínico Geral"
       };
 
       try {
         const r = await fetch(`${API_BASE}/history/start`, {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({
-            cpf: patientMeta.cpf,
-            specialty: patientMeta.specialty,
-            sessionId: (crypto?.randomUUID?.() || String(Date.now()))
-          })
+          method:"POST", headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ cpf: patientMeta.cpf, specialty: patientMeta.specialty, sessionId: (crypto?.randomUUID?.() || String(Date.now())) })
         });
         const j = await r.json();
-        if (!j.ok || !j.consultId) throw new Error("start failed");
+        if (!j.ok || !j.consultId) throw 0;
         consultId = j.consultId;
         sessionStorage.setItem("reimed_consult", JSON.stringify({ id: consultId, startedAt: Date.now() }));
-
-        // OK — entra no chat
-        showLoader(false);
+        loader.classList.add("hidden");
         addBot("Olá! Sou o médico. Para prescrever com segurança, preciso confirmar sua idade, peso e alergias. Podemos começar?");
         setDisabled(false);
-      } catch (e) {
-        // Mostra erro visível e volta à recepção
-        netError.classList.remove("hidden");
-        netError.textContent = "Falha ao preparar a sala com o médico. Voltaremos à recepção.";
-        setTimeout(()=>toReception("Não consegui contato com o servidor agora. Volte à recepção e tente novamente."), 1400);
+      } catch(e){
+        // Sem mensagem vermelha: retorna suave para a recepção
+        toReception("Não consegui preparar a sala agora. Vamos voltar à recepção.");
       }
     }
 
-    async function send() {
+    async function send(){
       refreshIdle();
-      const txt = (input.value || "").trim();
+      const txt = (input.value||"").trim();
       if (!txt) return;
-      addUser(txt);
-      input.value = "";
-      setDisabled(true);
-
-      history.push({ role:"user", content: txt });
-
-      if (consultId) {
+      addUser(txt); input.value=""; setDisabled(true);
+      history.push({role:"user", content:txt});
+      if (consultId){
         fetch(`${API_BASE}/history/msg`, {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ consultId, role:"user", content: txt })
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({consultId, role:"user", content:txt})
         }).catch(()=>{});
       }
 
       try {
         const r = await fetch(`${API_BASE}/api/medico/chat`, {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
+          method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ history, patientMeta, specialty: patientMeta.specialty })
         });
-        const j = await r.json();
-        if (!j.ok) throw new Error("chat failed");
+        const j = await r.json(); if (!j.ok) throw 0;
         const reply = j.reply || "Desculpe, estou indisponível agora.";
-        history.push({ role:"assistant", content: reply });
-
-        if (consultId) {
+        history.push({role:"assistant", content:reply});
+        if (consultId){
           fetch(`${API_BASE}/history/msg`, {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ consultId, role:"assistant", content: reply })
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({consultId, role:"assistant", content:reply})
           }).catch(()=>{});
         }
         addBot(reply);
-      } catch (e) {
-        addBot("Não consegui contato com o servidor agora. Voltaremos à recepção…");
-        setTimeout(()=>toReception("Não consegui contato com o servidor agora. Tente novamente."), 1400);
-      } finally {
-        setDisabled(false);
-      }
+      } catch(e){
+        toReception("A conexão caiu. Voltaremos à recepção.");
+      } finally { setDisabled(false); }
     }
 
     sendBtn.addEventListener("click", send);
-    input.addEventListener("keydown", (ev)=>{ if (ev.key === "Enter") send(); refreshIdle(); });
-    fileBtn.addEventListener("click", ()=>refreshIdle());
-    box.addEventListener("scroll", refreshIdle);
+    input.addEventListener("keydown", (ev)=>{ if (ev.key==="Enter") send(); refreshIdle(); });
 
+    // Exibe aviso eventual vindo da recepção
+    const n = localStorage.getItem("reimed_notice"); if (n){ addBot(n); localStorage.removeItem("reimed_notice"); }
     boot();
   </script>
 </body>
