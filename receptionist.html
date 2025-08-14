@@ -97,6 +97,21 @@ function conectar(){
   // vai primeiro para a ponte que cria a sessão e redireciona
   location.href = 'paciente.html';
 }
+// Override de tempos de digitação para Recepção
+function __calcTypingTimeFor(texto){
+  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 8;
+  return Math.max(6900, Math.round(words * 2300)); // 1 palavra a cada ~2.3s
+}
+function __calcThinkingTime(){
+  return Math.floor(15000 + Math.random()*15000); // 15–30s
+}
+async function recepcaoPensandoEDigitando(texto){
+  if (typeof delay !== 'function'){ window.delay = (ms)=>new Promise(r=>setTimeout(r,ms)); }
+  if (typeof status === 'function'){ status("Recepção pensando…"); }
+  await delay(__calcThinkingTime());
+  if (typeof status === 'function'){ status("Recepção digitando…"); }
+  await delay(__calcTypingTimeFor(texto));
+}
 </script>
 </body>
 </html>
