@@ -28,7 +28,6 @@ const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-ap
     body:JSON.stringify({specialty})
   }).then(r=>r.json()).then(d=>{
     localStorage.setItem('sessionId', d.sessionId||'');
-localStorage.setItem('sessionStart', String(Date.now()));
     location.replace('medico.html');
   }).catch(()=>{
     // mesmo que a API caia, segue para a sala (o médico vai avisar erro)
@@ -36,5 +35,25 @@ localStorage.setItem('sessionStart', String(Date.now()));
   });
 })();
 </script>
+
+<script>
+// Expiração por inatividade (3 minutos) — redireciona para Recepção
+(function(){
+  let timer;
+  const LIMIT_MS = 3*60*1000;
+  function reset(){
+    clearTimeout(timer);
+    timer = setTimeout(()=>{
+      try { sessionStorage.clear(); } catch(e){}
+      location.replace("receptionist.html");
+    }, LIMIT_MS);
+  }
+  ["click","keydown","mousemove","touchstart","scroll"].forEach(ev=>{
+    window.addEventListener(ev, reset, {passive:true});
+  });
+  reset();
+})();
+</script>
+
 </body>
 </html>
