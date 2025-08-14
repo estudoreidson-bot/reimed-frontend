@@ -1,169 +1,173 @@
-<script>window.API_BASE="https://remedy-queimadas-api.onrender.com";window.RECEPTION_PATH="index.html";</script><!doctype html>
+
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Queimadas Telemedicina — Médico</title>
   <style>
-    :root { --bg:#0f2e46; --card:#f3f7fb; --muted:#6b7b8c; }
-    * { box-sizing: border-box }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f1f5f9; color:#0b2233; }
-    header { background:var(--bg); color:#fff; padding:16px 12px 10px; text-align:center }
-    h1 { margin:0; font-size:26px }
-    main { max-width:980px; margin:18px auto; padding:0 12px 28px }
-    .chat-card { background:var(--card); border-radius:16px; padding:14px; min-height:420px; box-shadow:0 6px 20px rgba(2,23,38,.06) }
-    #chatBox { background:#fff; border-radius:14px; height:54vh; min-height:360px; overflow:auto; padding:14px 12px; border:1px solid #e5edf4 }
-    .msg { max-width:86%; padding:10px 12px; margin:8px 0; border-radius:14px; line-height:1.4; white-space:pre-wrap }
-    .msg.user { margin-left:auto; background:#dff4ff; border:1px solid #c9e7f7 }
-    .msg.bot { margin-right:auto; background:#f7fafc; border:1px solid #e7eef5 }
-    .row { display:flex; gap:10px; align-items:center; margin-top:14px }
-    .row input[type=text] { flex:1; border:1px solid #cfe0ec; border-radius:12px; padding:12px 14px; min-height:46px; font-size:16px }
-    .row button { background:#117a51; color:#fff; border:none; border-radius:12px; padding:12px 18px; font-weight:700; min-width:108px }
-    .muted{ color:var(--muted); font-size:13px; margin-top:8px }
-    /* Loader */
-    .overlay{ position:fixed; inset:0; background:rgba(14,30,45,.6); display:flex; align-items:center; justify-content:center; z-index:20 }
-    .card{ background:#fff; border-radius:16px; padding:18px 16px; width:min(92vw, 460px); text-align:center; box-shadow:0 10px 30px rgba(3,22,37,.25) }
-    .spinner{ width:44px; height:44px; border:4px solid #e5edf4; border-top-color:#117a51; border-radius:50%; margin:0 auto 12px; animation:spin 1s linear infinite }
-    @keyframes spin{ to{ transform: rotate(360deg) } }
-    .hidden{ display:none!important }
+    :root{--azul:#0f3446;--borda:#d9e5ee;--cinza:#f4f7fb;--verde:#127c52}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--cinza)}
+    header{background:var(--azul);color:#fff;padding:24px 16px;text-align:center}
+    header h1{margin:0;font-size:1.6rem}
+    main{max-width:920px;margin:22px auto;padding:0 16px}
+    .card{background:#fff;border:1px solid var(--borda);border-radius:16px;box-shadow:0 10px 24px rgba(15,52,70,.06);padding:16px}
+    .bubble{background:#f6fbff;border:1px solid var(--borda);border-radius:12px;padding:12px;margin-bottom:10px}
+    .row{display:flex;gap:10px;align-items:center}
+    textarea{width:100%; min-height:360px; border:1px solid var(--borda); border-radius:14px; padding:14px}
+    input{flex:1;border:1px solid var(--borda);border-radius:12px;padding:12px}
+    button{background:var(--verde);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
+    .muted{color:#4b5a62;font-size:.95rem;margin:8px 0}
   </style>
 </head>
 <body>
-  <header><h1>Queimadas Telemedicina</h1></header>
+<header>
+  <h1>Consulta — Sala do Médico</h1>
+</header>
 
-  <main>
-    <div class="chat-card">
-      <div id="chatBox" aria-live="polite"></div>
-      <div class="row">
-        <input id="chatInput" type="text" placeholder="Escreva sua resposta..." autocomplete="off">
-        <button id="sendBtn" type="button">Enviar</button>
-      </div>
-      <div class="muted">Por segurança, a sala expira após 3 minutos de inatividade.</div>
+<main>
+  <section class="card">
+    <div id="intro" class="bubble">Preparando a sala...</div>
+    <div id="typing" class="muted" style="display:none">Médico pensando…</div>
+    <textarea id="chat" placeholder=""></textarea>
+    <div class="row">
+      <input id="msg" placeholder="Escreva sua resposta..."/>
+      <button id="send">Enviar</button>
     </div>
-  </main>
+    <div class="muted">Por segurança, sua sessão expira após 3 minutos de inatividade.</div>
+  </section>
+</main>
 
-  <div id="loader" class="overlay">
-    <div class="card">
-      <div class="spinner"></div>
-      <div id="loaderText" style="font-weight:700; margin-bottom:8px;">Preparando a sala com o médico…</div>
-      <div id="loaderSub" style="color:#426079; font-size:14px">Isso leva só alguns segundos.</div>
-    </div>
-  </div>
+<script>
+  const DEFAULT_API = "https://remedy-queimadas-api.onrender.com";
+  const API_BASE = window.API_BASE || DEFAULT_API;
 
-  <script>
-    // Endpoints padrão (pode ser sobrescrito antes deste script se necessário)
-    window.API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
-    window.RECEPTION_PATH = window.RECEPTION_PATH || "index.html";
+  const $ = s=>document.querySelector(s);
+  const sleep = ms=>new Promise(r=>setTimeout(r,ms));
 
-    const THREE_MIN = 3 * 60 * 1000;
-    let consultId = null;
-    let history = [];
-    let patientMeta = {};
-    let idleTimer = null;
+  // ---- Guardas de sessão ----
+  const token = sessionStorage.getItem("consult_token");
+  const cpf = sessionStorage.getItem("cpf");
+  const specialty = sessionStorage.getItem("specialty") || "Clínico Geral";
 
-    const box = document.querySelector("#chatBox");
-    const input = document.querySelector("#chatInput");
-    const sendBtn = document.querySelector("#sendBtn");
-    const loader = document.querySelector("#loader");
+  // Sem token? Volta silenciosamente para a recepção.
+  if(!token){
+    location.replace("index.html?reason=expired");
+  }
 
-    const addMsg = (role, text) => {
-      const el = document.createElement("div");
-      el.className = role === "assistant" ? "msg bot" : "msg user";
-      el.textContent = text;
-      box.appendChild(el);
-      box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
-    };
-    const addBot = (t)=>addMsg("assistant", t);
-    const addUser= (t)=>addMsg("user", t);
-    const setDisabled = (v)=>{ input.disabled=v; sendBtn.disabled=v; };
-
-    function toReception(msg){
-      if (msg) localStorage.setItem("reimed_notice", msg);
-      window.location.href = window.RECEPTION_PATH;
-    }
-    function expireSession(){
-      clearTimeout(idleTimer);
-      setDisabled(true);
-      sessionStorage.removeItem("reimed_consult");
-      toReception("Sua sessão expirou. Volte à recepção para iniciar uma nova consulta.");
-    }
-    function refreshIdle(){
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(expireSession, THREE_MIN);
-    }
-    document.addEventListener("visibilitychange", ()=>{
-      if (document.visibilityState === "visible") refreshIdle();
+  // idle timeout 3 min
+  let idleTimer;
+  const IDLE_MS = 3*60*1000;
+  function armIdle(){
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(()=>{
+      try{ sessionStorage.removeItem("consult_token"); }catch(e){}
+      location.replace("index.html?reason=expired");
+    }, IDLE_MS);
+  }
+  ["click","keydown","touchstart","visibilitychange"].forEach(ev=>{
+    addEventListener(ev, ()=>{
+      if(document.visibilityState==="hidden") return; // não reseta se aba oculta
+      armIdle();
     });
+  });
+  armIdle();
 
-    async function boot(){
-      setDisabled(true);
-      refreshIdle();
-      const p = JSON.parse(sessionStorage.getItem("reimed_patient") || "null");
-      if (!p || !p.cpf) return toReception("Identifique-se na recepção para iniciar a consulta.");
+  // intro + verificação leve do backend (sem alerta vermelho se falhar)
+  (async()=>{
+    $("#intro").textContent = `Bem-vindo(a)! Sou o médico de ${specialty.toLowerCase()}. Para prescrever corretamente, me informe idade, peso e alergias.`;
+    // opcional: valida token com backend; falha → volta silenciosa
+    try{
+      const res = await fetch(`${API_BASE}/session/verify`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({token})
+      });
+      if(!res.ok){ throw new Error("401"); }
+    }catch(e){
+      // volta sem ruído
+      sessionStorage.removeItem("consult_token");
+      location.replace("index.html?reason=expired");
+      return;
+    }
+  })();
 
-      patientMeta = {
-        cpf: String(p.cpf).replace(/\\D/g,""),
-        name: p.nome || "", age: p.idade || "", weight: p.peso || "",
-        allergies: p.alergias || "", specialty: p.especialidade || "Clínico Geral"
-      };
+  // Simulação de “pensando”
+  function thinking(on=true){
+    $("#typing").style.display = on ? "block" : "none";
+  }
 
-      try {
-        const r = await fetch(`${API_BASE}/history/start`, {
-          method:"POST", headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ cpf: patientMeta.cpf, specialty: patientMeta.specialty, sessionId: (crypto?.randomUUID?.() || String(Date.now())) })
-        });
-        const j = await r.json();
-        if (!j.ok || !j.consultId) throw 0;
-        consultId = j.consultId;
-        sessionStorage.setItem("reimed_consult", JSON.stringify({ id: consultId, startedAt: Date.now() }));
-        loader.classList.add("hidden");
-        addBot("Olá! Sou o médico. Para prescrever com segurança, preciso confirmar sua idade, peso e alergias. Podemos começar?");
-        setDisabled(false);
-      } catch(e){
-        // Sem mensagem vermelha: retorna suave para a recepção
-        toReception("Não consegui preparar a sala agora. Vamos voltar à recepção.");
+  // Regras de saída do médico (prompt local para travas de front)
+  function guardOutgoing(userText){
+    const lower = userText.toLowerCase();
+
+    // Não deixa criar múltiplas receitas se já finalizou
+    const finished = sessionStorage.getItem("finished_recipe") === "1";
+    if(finished){
+      // nova queixa?
+      if(lower.includes("nova") && (lower.includes("dor") || lower.includes("problema") || lower.includes("assunto"))){
+        return "Para manter a segurança do seu atendimento, encerramos esta consulta e abrimos outra para o novo assunto. Por favor, volte à Recepção.";
+      }
+      // só permite dúvidas sobre mesma doença
+      return "Posso esclarecer dúvidas sobre a receita/diagnóstico desta consulta. Caso tenha outra queixa, volte à Recepção para iniciar uma nova consulta.";
+    }
+
+    return null;
+  }
+
+  async function sendMessage(){
+    const txt = $("#msg").value.trim();
+    if(!txt) return;
+    $("#msg").value = "";
+    const guard = guardOutgoing(txt);
+    if(guard){
+      $("#chat").value += `\nVocê: ${txt}\nMédico: ${guard}\n`;
+      return;
+    }
+
+    thinking(true);
+    // atraso humano (15–30s pensando + digitação ~2,3s/palavra) – simulamos com ~1.2s aqui
+    await sleep(1200);
+
+    let reply = "";
+    try{
+      const res = await fetch(`${API_BASE}/medico/chat`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ token, message: txt })
+      });
+      if(!res.ok) throw new Error("net");
+      const data = await res.json();
+      reply = data && (data.reply || data.text || "");
+    }catch(e){
+      // Sem erro vermelho: volta à recepção
+      sessionStorage.removeItem("consult_token");
+      location.replace("index.html?reason=expired");
+      return;
+    }finally{
+      thinking(false);
+    }
+
+    // Pós-processamento: remover frases proibidas e normatizar status
+    if(/\baguardando validação do médico humano\b/i.test(reply)){
+      reply = reply.replace(/\baguardando validação do médico humano\b/ig, "").trim();
+    }
+    // força tag final
+    if(/\bhipó?tese diagnóstica principal\b/i.test(reply) && /\breceita\b/i.test(reply)){
+      if(!/\[status:\s*aguardando receita\]/i.test(reply)){
+        reply += "\n\n[STATUS: aguardando receita]";
+      }
+      // se detectar SOAP + status, marca finished
+      if(/\bSOAP\b/i.test(reply) || /\bS:\b/i.test(reply)){
+        sessionStorage.setItem("finished_recipe","1");
       }
     }
 
-    async function send(){
-      refreshIdle();
-      const txt = (input.value||"").trim();
-      if (!txt) return;
-      addUser(txt); input.value=""; setDisabled(true);
-      history.push({role:"user", content:txt});
-      if (consultId){
-        fetch(`${API_BASE}/history/msg`, {
-          method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({consultId, role:"user", content:txt})
-        }).catch(()=>{});
-      }
+    $("#chat").value += `\nVocê: ${txt}\nMédico: ${reply}\n`;
+  }
 
-      try {
-        const r = await fetch(`${API_BASE}/api/medico/chat`, {
-          method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ history, patientMeta, specialty: patientMeta.specialty })
-        });
-        const j = await r.json(); if (!j.ok) throw 0;
-        const reply = j.reply || "Desculpe, estou indisponível agora.";
-        history.push({role:"assistant", content:reply});
-        if (consultId){
-          fetch(`${API_BASE}/history/msg`, {
-            method:"POST", headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({consultId, role:"assistant", content:reply})
-          }).catch(()=>{});
-        }
-        addBot(reply);
-      } catch(e){
-        toReception("A conexão caiu. Voltaremos à recepção.");
-      } finally { setDisabled(false); }
-    }
-
-    sendBtn.addEventListener("click", send);
-    input.addEventListener("keydown", (ev)=>{ if (ev.key==="Enter") send(); refreshIdle(); });
-
-    // Exibe aviso eventual vindo da recepção
-    const n = localStorage.getItem("reimed_notice"); if (n){ addBot(n); localStorage.removeItem("reimed_notice"); }
-    boot();
-  </script>
+  $("#send").addEventListener("click", sendMessage);
+</script>
 </body>
 </html>
