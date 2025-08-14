@@ -29,7 +29,8 @@
       (ex.: Resolução CFM 2.314/2022), com observância à LGPD (Lei 13.709/2018). Atendimento
       remoto com registro em prontuário, identificação das partes e consentimento informado.
     </div>
-  </main>
+  <div id="opcoesCPF" class="container"></div>
+</main>
 
 <script>
 const chat = document.getElementById('chat');
@@ -68,6 +69,8 @@ function typeMessage(text, klass="recep", min=10000){
 })();
 
 async function selectSpecialty(nome){
+  try{ localStorage.setItem('especialidade', nome); localStorage.setItem('cameFromReception','1'); }catch(e){}
+
   boxEsp.style.display='none';
   localStorage.setItem('selectedSpecialty', nome);
   await typeMessage('Especialidade escolhida: '+nome+'.', 'eu', 500);
@@ -97,20 +100,70 @@ function conectar(){
   // vai primeiro para a ponte que cria a sessão e redireciona
   location.href = 'paciente.html';
 }
-// Override de tempos de digitação para Recepção
-function __calcTypingTimeFor(texto){
-  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 8;
-  return Math.max(6900, Math.round(words * 2300)); // 1 palavra a cada ~2.3s
+// ====== Fluxo: CPF -> opções (nova consulta / receitas/exames/encaminhamentos) ======
+async function recepcaoIdentificarCPF(cpf){
+  const cpfNum = String(cpf||"").replace(/\D/g,"");
+  if(!cpfNum) return alert("Informe um CPF válido.");
+  try{
+    localStorage.setItem("pacienteCPF", cpfNum);
+    const res = await fetch((localStorage.getItem("API_BASE")||"https://remedy-queimadas-api.onrender.com")+"/reception/check?cpf="+cpfNum);
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error||"Erro");
+    // Monta painel de opções
+    const msg = data.docs && data.docs.length ? 
+      "Encontrei registros para este CPF. O que você deseja?" : 
+      "Não encontrei registros para este CPF. Quer iniciar um cadastro e uma nova consulta?";
+    const div = document.createElement('div');
+    div.className = "card";
+    div.innerHTML = "<p>"+msg+"</p>";
+    const b1 = document.createElement('button'); b1.textContent = "Nova consulta"; b1.onclick = ()=>{ localStorage.setItem('cameFromReception','1'); window.location.href='paciente.html'; };
+    div.appendChild(b1);
+    if(data.docs && data.docs.length){
+      const b2 = document.createElement('button'); b2.textContent = "Ver documentos (receitas/exames/encaminhamentos)"; b2.style.marginLeft="8px";
+      b2.onclick = ()=> listarDocsDoCPF(cpfNum);
+      div.appendChild(b2);
+    }
+    document.querySelector("#opcoesCPF")?.replaceChildren(div);
+  }catch(e){
+    alert("Falha ao consultar CPF.");
+  }
 }
-function __calcThinkingTime(){
-  return Math.floor(15000 + Math.random()*15000); // 15–30s
+
+async function listarDocsDoCPF(cpfNum){
+  try{
+    const base = (localStorage.getItem("API_BASE")||"https://remedy-queimadas-api.onrender.com");
+    const res = await fetch(base+"/admin/docs?cpf="+cpfNum, { headers: { /* público? usamos endpoint admin? melhor usar reception/check */ } });
+    // Para não exigir token admin, vamos reutilizar /reception/check
+    const res2 = await fetch(base+"/reception/check?cpf="+cpfNum);
+    const data = await res2.json();
+    if(!data.ok) throw new Error();
+    const wrap = document.createElement('div'); wrap.className="card";
+    let html = "<h3>Seus documentos</h3><ul>";
+    for(const d of data.docs){
+      const s = d.status;
+      html += "<li>#"+d.id+" — "+d.tipo+" — "+s+" — "+new Date(d.createdAt).toLocaleString()+" ";
+      if(s==="aprovado"){
+        html += "<button onclick=\"baixarDoc("+d.id+",'"+cpfNum+"')\">Baixar</button>";
+      } else {
+        html += "<span class='pill pendente'>Aguardando aprovação</span>";
+      }
+      html += "</li>";
+    }
+    html += "</ul>";
+    wrap.innerHTML = html;
+    document.querySelector("#opcoesCPF")?.replaceChildren(wrap);
+  }catch(e){ alert("Falha ao listar documentos."); }
 }
-async function recepcaoPensandoEDigitando(texto){
-  if (typeof delay !== 'function'){ window.delay = (ms)=>new Promise(r=>setTimeout(r,ms)); }
-  if (typeof status === 'function'){ status("Recepção pensando…"); }
-  await delay(__calcThinkingTime());
-  if (typeof status === 'function'){ status("Recepção digitando…"); }
-  await delay(__calcTypingTimeFor(texto));
+
+async function baixarDoc(id, cpf){
+  const base = (localStorage.getItem("API_BASE")||"https://remedy-queimadas-api.onrender.com");
+  const r = await fetch(base+"/reception/docs/"+id+"?cpf="+cpf);
+  const data = await r.json();
+  if(!data.ok) return alert("Não foi possível abrir este documento.");
+  if(data.status!=="aprovado") return alert("Documento ainda pendente.");
+  const w = window.open("", "_blank");
+  w.document.write("<pre style='white-space:pre-wrap;font:16px/1.4 system-ui,Segoe UI,Arial'>"+(data.conteudo||"")+"</pre>");
+  w.document.close(); w.focus();
 }
 </script>
 </body>
