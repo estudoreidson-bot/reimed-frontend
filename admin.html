@@ -12,7 +12,8 @@
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f4f7fb;color:var(--ink)}
     header{background:var(--bg);color:#fff}
     .wrap{max-width:1100px;margin:0 auto;padding:12px}
-    .banner{height:110px;background:#0f2e46 url('img/banner-queimadas.jpg') center/cover no-repeat;border-radius:10px;margin:6px 0 10px}
+    .brandbar{display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px;padding:8px;margin:6px 0 10px}
+    .brandbar img{max-height:74px;height:auto;display:block}
     .title{display:flex;align-items:center;justify-content:space-between}
     .btn{border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
     .btn-plain{background:#e9f1f7;color:#133b52}
@@ -40,13 +41,18 @@
     .box h3{margin:0 0 10px}
     .box textarea{width:100%;min-height:240px;padding:10px;border:1px solid #cfe0ec;border-radius:8px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
     .box .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-    .muted{color:var(--muted);font-size:13px}
+    footer{max-width:1100px;margin:16px auto 28px;padding:0 12px;text-align:center}
+    .partner{background:#fff;border:1px solid #e6eef4;border-radius:12px;padding:10px}
+    .partner img{max-height:54px;height:auto}
   </style>
 </head>
 <body>
   <header>
     <div class="wrap">
-      <div class="banner" aria-label="Queimadas - banner"></div>
+      <div class="brandbar">
+        <!-- Mostra o logo de Queimadas. Se a imagem não existir, permanece a faixa azul. -->
+        <img src="img/logo-queimadas.png" alt="Prefeitura de Queimadas">
+      </div>
       <div class="title">
         <h2>Área do Médico Administrador</h2>
         <button id="logout" class="btn btn-plain">Sair</button>
@@ -90,19 +96,14 @@
       </thead>
       <tbody id="rows"></tbody>
     </table>
-
-    <!-- Linha 3 (histórico simples) -->
-    <div class="toolbar" style="margin-top:12px">
-      <label>Buscar histórico por CPF
-        <input id="cpfHist3" type="text" placeholder="Somente números" inputmode="numeric">
-      </label>
-      <label>CPF do paciente (histórico)
-        <input id="cpfHistShow" type="text" placeholder="Apenas números" inputmode="numeric">
-      </label>
-      <button id="btnHistShow" class="btn btn-blue">Ver histórico</button>
-      <span class="muted">Dica: o histórico detalhado também aparece ao clicar “Ver/Editar”.</span>
-    </div>
   </main>
+
+  <footer>
+    <div class="partner">
+      <!-- Logo do Atende+ no rodapé -->
+      <img src="img/logo-atendemais.png" alt="Atende+">
+    </div>
+  </footer>
 
   <!-- Modal Ver/Editar -->
   <div class="modal" id="mView">
@@ -199,7 +200,7 @@
       }
     };
 
-    // Histórico por CPF (modais simplificados pelo próprio Ver/Editar)
+    // Histórico rápido por CPF (via alert simples)
     async function openHist(cpf){
       if (!cpf) return;
       const url = API + "/admin/history?cpf=" + encodeURIComponent(cpf);
@@ -211,10 +212,9 @@
         alert("Falha ao carregar histórico.");
       }
     }
-    function onlyDigits(s){ return String(s||'').replace(/\D/g,''); }
+    function onlyDigits(s){ return String(s||'').replace(/\\D/g,''); }
     document.querySelector("#btnHist1").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHist1").value));
     document.querySelector("#btnHist2").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHist2").value));
-    document.querySelector("#btnHistShow").onclick = ()=> openHist(onlyDigits(document.querySelector("#cpfHistShow").value));
 
     // Buscar & imprimir período
     document.querySelector("#buscar").onclick = load;
