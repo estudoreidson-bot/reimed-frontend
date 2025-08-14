@@ -1,245 +1,219 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Queimadas Telemedicina — Recepção</title>
   <style>
-    :root{
-      --azul:#0f3446; --azul2:#154f66; --cinza:#eef3f7; --borda:#d9e5ee; --verde:#127c52;
+    :root {
+      --azul:#0f3144; --azul2:#173f55; --verde:#157347; --cinza:#eef3f7; --borda:#e1e7ee;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-         background:var(--cinza);color:#0a0a0a}
-    header{background:var(--azul); color:#fff; padding:26px 16px; text-align:center; position:sticky; top:0; z-index:10}
-    header .row{display:flex; align-items:center; justify-content:center; gap:12px}
-    header img{height:48px; object-fit:contain}
-    header h1{margin:6px 0 0;font-size:1.8rem; font-weight:800; letter-spacing:.3px}
-    main{max-width:920px;margin:24px auto;padding:0 16px}
-    .card{background:#fff;border:1px solid var(--borda);border-radius:16px;box-shadow:0 10px 24px rgba(15,52,70,.06);padding:16px}
-    .bubble{background:#f5fbff;border:1px solid var(--borda);border-radius:12px;padding:16px;color:#0a2733}
-    textarea{width:100%;min-height:420px;border:1px solid var(--borda);border-radius:16px;padding:16px;margin:10px 0 12px; outline:none}
-    .input-row{display:flex; gap:12px; align-items:center}
-    .input-row input{flex:1;border:1px solid var(--borda);border-radius:14px;padding:14px 16px;outline:none}
-    .btn{background:var(--verde);border:none;border-radius:12px;color:#fff;padding:14px 18px;font-weight:700;cursor:pointer}
-    .btn.secondary{background:#0f3446}
-    footer{margin:56px 0 24px; text-align:center; opacity:.9}
-    footer img{height:36px; object-fit:contain}
-    .tag{display:inline-block;margin:.25rem; padding:.5rem .75rem;border-radius:999px;border:1px solid var(--borda);background:#fff;cursor:pointer}
-    .tag.active{background:#e8f7ff;border-color:#9ed6f5}
-    .pillbar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
-    /* CPF modal */
-    .modal{position:fixed;inset:0;background:rgba(6,16,24,.55);display:none;align-items:center;justify-content:center;z-index:50}
-    .modal.show{display:flex}
-    .sheet{background:#fff;border-radius:18px;max-width:680px;width:94vw;border:1px solid var(--borda);box-shadow:0 20px 60px rgba(0,0,0,.25)}
-    .sheet header{background:#fff;color:#0a0a0a;padding:18px 20px;border-bottom:1px solid var(--borda);position:unset}
-    .sheet h2{margin:0 0 6px;font-size:1.35rem}
-    .sheet .warn{background:#fff4cf;border:1px solid #f0d78b;padding:12px 14px;border-radius:12px;margin:8px 0 12px}
-    .sheet .body{padding:12px 20px 20px}
-    .sheet input{width:100%; border:1px solid var(--borda); border-radius:12px; padding:14px 16px; font-size:1.05rem}
-    .sheet .actions{display:flex; gap:12px; justify-content:flex-end; margin-top:14px}
-    .banner{max-width:920px;margin:10px auto;padding:10px 14px;border-radius:10px;border:1px solid #ffd6a8;background:#fff7ed;color:#6a3b00}
-    .typing{font-size:.95rem;color:#3a5561;margin:8px 0 14px;display:none}
-    .typing.show{display:block}
+    html,body {height:100%; margin:0; background:#f5f9fc; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial;}
+    header {background:var(--azul); color:#fff; padding:14px 18px; display:flex; align-items:center; gap:12px; justify-content:center; position:sticky; top:0; z-index:5;}
+    header img {height:48px; max-width:60vw; object-fit:contain}
+    header h1 {margin:0; font-size:clamp(18px,3.2vw,26px); font-weight:700}
+    main {max-width:980px; margin:18px auto; padding:0 12px;}
+    .card {background:#fff; border:1px solid var(--borda); border-radius:14px; box-shadow:0 4px 16px rgba(0,0,0,.04);}
+    .chat {min-height:52vh; max-height:66vh; overflow:auto; padding:16px;}
+    .row {display:flex; margin:10px 0; gap:10px; align-items:flex-end}
+    .avatar {width:36px; height:36px; border-radius:50%; background:#dfe9f3; display:flex; align-items:center; justify-content:center; color:#234; font-weight:700}
+    .bubble {max-width:76%; padding:12px 14px; border-radius:16px; line-height:1.35; border:1px solid var(--borda)}
+    .from-bot .bubble {background:#ffffff}
+    .from-user {justify-content:flex-end}
+    .from-user .bubble {background:#dff7ea; border-color:#c5ecd8}
+    .footer {display:flex; gap:10px; padding:12px; border-top:1px solid var(--borda)}
+    input[type=text] {flex:1; padding:12px 14px; border-radius:12px; border:1px solid var(--borda); font-size:16px; outline:none;}
+    button.enviar {background:var(--verde); color:#fff; border:none; padding:12px 18px; border-radius:12px; font-weight:600; cursor:pointer}
+    .chips {display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+    .chip {background:#f0f6fb; border:1px solid #d6e6f3; padding:8px 12px; border-radius:999px; cursor:pointer}
+    .typing {width:54px; height:20px; display:inline-flex; align-items:center; gap:3px; }
+    .dot {width:8px; height:8px; background:#94a8b8; border-radius:50%; animation:blink 1.2s infinite alternate}
+    .dot:nth-child(2) {animation-delay:.2s} .dot:nth-child(3) {animation-delay:.4s}
+    @keyframes blink {from {opacity:.35; transform:translateY(1px)} to {opacity:1; transform:translateY(-1px)}}
+    footer {
+      max-width:980px; margin:10px auto 22px; padding:0 12px; text-align:center; color:#4b5b69;
+    }
+    footer img {height:34px; object-fit:contain}
+    .hint {font-size:13px; color:#6b7b88; margin-top:6px}
   </style>
 </head>
 <body>
   <header>
-    <div class="row">
-      <img src="img/logo-queimadas.png" alt="Queimadas" onerror="this.style.display='none'">
-      <h1>Queimadas Telemedicina — Recepção</h1>
-    </div>
+    <img src="img/logo-queimadas.png" alt="" onerror="this.style.display='none'">
+    <h1>Queimadas Telemedicina — Recepção</h1>
   </header>
 
-  <div id="expiredBanner" class="banner" style="display:none">Sua sessão anterior foi encerrada por inatividade.</div>
-
-  <main>
-    <section class="card">
-      <div class="bubble">Bem-vindo(a)! Digite sua mensagem para iniciar sua consulta.</div>
-
-      <div id="typing" class="typing">Recepcionista digitando…</div>
-
-      <textarea id="msg" placeholder=""></textarea>
-      <div class="input-row">
-        <input id="quick" placeholder="Digite aqui…" />
-        <button id="send" class="btn">Enviar</button>
-      </div>
-
-      <div style="margin:10px 0 6px; color:#4a5d66">Para segurança, sua sessão expira após alguns minutos sem atividade.</div>
-
-      <div id="docsArea" style="display:none">
-        <h3 style="margin:18px 0 6px">Documentos disponíveis para este CPF</h3>
-        <div id="docsBar" class="pillbar"></div>
-      </div>
-
-      <div style="margin:18px 0 6px; font-weight:700">Especialidade</div>
-      <div id="specs" class="pillbar"></div>
-    </section>
+  <main class="card">
+    <div id="chat" class="chat"></div>
+    <div class="footer">
+      <input id="msg" type="text" placeholder="Digite aqui..." autocomplete="off" />
+      <button id="send" class="enviar">Enviar</button>
+    </div>
+    <div class="hint">Para segurança, sua sessão expira após alguns minutos sem atividade.</div>
   </main>
 
   <footer>
-    <img src="img/logo-atendemais.png" alt="Atende+" onerror="this.style.display='none'">
+    <img src="img/logo-atendemais.png" alt="" onerror="this.style.display='none'">
   </footer>
 
-  <!-- CPF Modal -->
-  <div class="modal" id="cpfModal" role="dialog" aria-modal="true" aria-labelledby="cpfTitle">
-    <div class="sheet">
-      <header>
-        <h2 id="cpfTitle">Antes de começar, informe seu CPF</h2>
-        <div>O CPF é vinculado ao seu prontuário eletrônico. <b>Não utilize o CPF de outra pessoa.</b></div>
-      </header>
-      <div class="body">
-        <div class="warn">
-          O uso do mesmo CPF por pessoas diferentes pode gerar erros na prescrição, porque o sistema considera
-          o histórico de consultas anteriores para a triagem.
-        </div>
-        <input id="cpfInput" inputmode="numeric" pattern="[0-9]*" placeholder="Apenas números" maxlength="14">
-        <div class="actions">
-          <button id="cpfOk" class="btn secondary">Continuar</button>
-        </div>
-      </div>
-    </div>
-  </div>
+<script>
+(() => {
+  const API_BASE = window.API_BASE || "https://remedy-queimadas-api.onrender.com";
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('msg');
+  const sendBtn = document.getElementById('send');
 
-  <script>
-    // -------- CONFIG --------
-    const DEFAULT_API = "https://remedy-queimadas-api.onrender.com";
-    const API_BASE = window.API_BASE || DEFAULT_API;
+  const state = {
+    phase: 'await_cpf', // 'ask_docs_or_new', 'choose_specialty', 'ready_to_call'
+    cpf: sessionStorage.getItem('cpf') || '',
+    last: Date.now(),
+  };
 
-    // -------- UTIL --------
-    const $ = sel => document.querySelector(sel);
-    const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
-    const onlyDigits = s => (s||"").replace(/\D+/g, "");
+  function scrollBottom() { chat.scrollTop = chat.scrollHeight; }
+  function row(html, cls='from-bot') {
+    const r = document.createElement('div');
+    r.className = 'row ' + cls;
+    r.innerHTML = html;
+    chat.appendChild(r); scrollBottom(); return r;
+  }
+  function bubble(text, who='bot') {
+    const html = who==='bot'
+      ? `<div class="avatar">R</div><div class="bubble">${text}</div>`
+      : `<div class="bubble">${text}</div>`;
+    return row(html, who==='bot'?'from-bot':'from-user');
+  }
+  function typing() {
+    return row(`<div class="avatar">R</div>
+      <div class="bubble"><span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>`);
+  }
 
-    // expired banner via querystring
-    const params = new URLSearchParams(location.search);
-    if(params.get("reason")==="expired"){ $("#expiredBanner").style.display="block"; }
+  function maskCpf(cpf) { return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
 
-    // specialties (you can tune names without changing logic)
-    const ESPECIALIDADES = ["Clínico Geral","Pediatria","Ginecologia","Dermatologia","Cardiologia","Psiquiatria","Ortopedia","Neurologia"];
-    const specsEl = $("#specs");
-    ESPECIALIDADES.forEach(name=>{
-      const a = document.createElement("button");
-      a.className = "tag"; a.textContent = name;
-      a.onclick = ()=> selectSpec(name, a);
-      specsEl.appendChild(a);
-    });
+  // Conversation script
+  async function start() {
+    // First receptionist message flow (chat style, no popups)
+    await sleepHuman(800, 1500);
+    bubble('Olá! Sou a <b>recepção</b> da Telemedicina de Queimadas.');
+    await think();
+    bubble('Antes de começarmos, digite o seu <b>CPF</b> (apenas números).<br><small><b>Atenção:</b> O CPF é vinculado ao seu prontuário. <b>Não utilize o CPF de outra pessoa</b>, pois isso pode causar erros na prescrição.</small>');
+    input.placeholder = 'Digite seu CPF (apenas números)';
+    state.phase = 'await_cpf';
+  }
 
-    let cpf = sessionStorage.getItem("cpf") || "";
-    // modal control
-    const modal = $("#cpfModal");
-    const cpfInput = $("#cpfInput");
-    const cpfOk = $("#cpfOk");
+  function sleepHuman(min=300, max=1200) {
+    return new Promise(r => setTimeout(r, Math.round(min + Math.random()*(max-min))));
+  }
+  async function think() { const t = typing(); await sleepHuman(1200, 2000); t.remove(); }
+  function sendUser(text) { bubble(escapeHtml(text), 'user'); state.last = Date.now(); }
+  function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c])); }
 
-    function showCPFModal(){
-      modal.classList.add("show");
-      setTimeout(()=>cpfInput.focus(), 50);
-    }
-    function hideCPFModal(){
-      modal.classList.remove("show");
-    }
+  async function handleMessage(text) {
+    text = text.trim();
+    if (!text) return;
+    sendUser(text);
 
-    function isCPFValid(v){
-      const s = onlyDigits(v);
-      return s.length>=11; // regra simples (validação completa pode ser aplicada no backend)
-    }
-
-    async function precheckDocs(){
-      // tenta buscar docs aprovados para o CPF informado
-      try{
-        const r = await fetch(`${API_BASE}/docs?cpf=${encodeURIComponent(cpf)}&status=approved`, {mode:"cors"});
-        if(!r.ok) throw new Error("fail");
-        const list = await r.json(); // esperado: [{id,type,title,url}] — se sua API divergir, ajuste aqui.
-        const bar = $("#docsBar"); bar.innerHTML = "";
-        if(Array.isArray(list) && list.length){
-          $("#docsArea").style.display = "block";
-          list.forEach(doc=>{
-            const pill = document.createElement("a");
-            pill.className="tag active"; pill.textContent = (doc.title||`Documento #${doc.id}`);
-            pill.href = doc.url || `${API_BASE}/docs/${doc.id}/download`; pill.target="_blank";
-            bar.appendChild(pill);
-          });
-        }else{
-          $("#docsArea").style.display = "none";
-        }
-      }catch(e){
-        // silencioso: se a API não responder, apenas não mostra nada
-        $("#docsArea").style.display = "none";
+    if (state.phase === 'await_cpf') {
+      const cpf = text.replace(/\D+/g,'');
+      if (cpf.length < 11) {
+        await think(); bubble('CPF inválido. Digite apenas números (11 dígitos).'); return;
       }
+      state.cpf = cpf; sessionStorage.setItem('cpf', cpf);
+      await think(); bubble('Perfeito. CPF registrado: <b>'+maskCpf(cpf)+'</b>.');
+      input.value='';
+      // Offer options
+      await think();
+      const wrapper = document.createElement('div');
+      wrapper.className='chips';
+      const a = document.createElement('div'); a.className='chip'; a.textContent='Abrir nova consulta';
+      const b = document.createElement('div'); b.className='chip'; b.textContent='Ver/baixar documentos anteriores';
+      wrapper.appendChild(a); wrapper.appendChild(b);
+      const r = bubble(wrapper.outerHTML); // render placeholder
+      r.querySelectorAll('.chip')[0].addEventListener('click', () => chooseSpecialty());
+      r.querySelectorAll('.chip')[1].addEventListener('click', () => listDocs());
+      state.phase = 'ask_docs_or_new';
+      input.placeholder = 'Escreva aqui...';
+      return;
     }
 
-    // entrada
-    if(!isCPFValid(cpf)){
-      showCPFModal();
-    }else{
-      precheckDocs();
+    if (state.phase === 'choose_specialty') {
+      // User can also type a specialty name; fallback to clinical if not matched.
+      const chosen = (text||'').toLowerCase();
+      let specialty = state._specialtyMap?.get(chosen) || state._specialtyFallback || 'clinico';
+      await think();
+      bubble('Especialidade selecionada: <b>'+specialty.toUpperCase()+'</b>. Preparando a sala...');
+      await callDoctor(specialty);
+      return;
     }
 
-    cpfOk.addEventListener("click", async ()=>{
-      const v = onlyDigits(cpfInput.value);
-      if(!isCPFValid(v)){
-        cpfInput.focus(); cpfInput.select();
-        cpfInput.style.borderColor = "#ef4444";
-        setTimeout(()=>cpfInput.style.borderColor = "", 800);
+    // default: keep in chat
+    await think();
+    bubble('Entendi. Para continuar, use as opções acima.');
+  }
+
+  async function listDocs() {
+    await think();
+    bubble('Vou verificar se há documentos para o CPF informado...');
+    try {
+      const u = new URL(API_BASE + '/api/patient/docs');
+      u.searchParams.set('cpf', state.cpf);
+      const resp = await fetch(u, {credentials:'omit'});
+      if (!resp.ok) throw new Error('resp '+resp.status);
+      const data = await resp.json();
+      if (!Array.isArray(data) || !data.length) {
+        await think(); bubble('Não localizei documentos recentes para este CPF.');
         return;
       }
-      cpf = v;
-      sessionStorage.setItem("cpf", cpf);
-      hideCPFModal();
-      await sleep(150);
-      precheckDocs();
-      typeReception("Obrigada! Seu CPF foi vinculado à sessão. Se você tiver documentos aprovados, eles aparecem acima.");
-    });
-
-    // typing simulation
-    function typeReception(text){
-      const t = $("#typing");
-      t.classList.add("show");
-      setTimeout(()=>{
-        t.classList.remove("show");
-      }, 1600);
-      // Apenas ornamental, textarea é livre para você usar como rascunho
+      const list = data.map(d => `<li>#<built-in function id> — <b>${d.tipo||'documento'}</b> — <a href="${d.pdf_url||'#'}" target="_blank">baixar PDF</a></li>`).join('');
+      bubble('<b>Documentos:</b><ul>'+list+'</ul>');
+    } catch(e) {
+      await think(); bubble('Não consegui consultar agora. Você pode tentar novamente mais tarde.');
     }
+  }
 
-    // select specialty and handshake → medico.html
-    async function selectSpec(name, btn){
-      // marca visual
-      [...document.querySelectorAll(".tag")].forEach(el=>el.classList.remove("active"));
-      btn.classList.add("active");
+  async function chooseSpecialty() {
+    await think();
+    bubble('Qual especialidade você deseja?');
+    await think();
+    const chips = [
+      'Clínico', 'Pediatria', 'Ginecologia', 'Dermatologia', 'Ortopedia',
+      'Cardiologia', 'Neurologia', 'Psiquiatria'
+    ];
+    const wrap = document.createElement('div'); wrap.className='chips';
+    chips.forEach(txt => { const c = document.createElement('div'); c.className='chip'; c.textContent=txt; wrap.appendChild(c); });
+    const r = bubble(wrap.outerHTML);
+    state._specialtyMap = new Map(chips.map(n => [n.toLowerCase(), n]));
+    state._specialtyFallback = 'Clínico';
+    r.querySelectorAll('.chip').forEach(el => el.addEventListener('click', () => handleMessage(el.textContent)));
+    state.phase = 'choose_specialty';
+  }
 
-      typeReception(`Certo. Preparando sua sala de ${name.toLowerCase()}…`);
-      // handshake com backend (opcional; se falhar, criamos token local)
-      let token = null;
-      try{
-        const r = await fetch(`${API_BASE}/handshake`, {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({cpf, specialty:name})
-        });
-        if(!r.ok) throw new Error("fail");
-        const data = await r.json();
-        token = data && (data.token || data.consult_token);
-      }catch(e){
-        // fallback local
-        token = `local_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      }
-      sessionStorage.setItem("consult_token", token);
-      sessionStorage.setItem("specialty", name);
-      sessionStorage.setItem("cpf", cpf);
-
-      // vai para o médico
-      await sleep(800);
-      location.href = "medico.html";
+  async function callDoctor(specialty) {
+    try {
+      const resp = await fetch(API_BASE + '/api/consult/start', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ cpf: state.cpf, specialty })
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      const token = data.consult_token || data.token || data.handshake || '';
+      if (!token) throw new Error('sem token');
+      const url = new URL('medico.html', location.href);
+      url.searchParams.set('token', token);
+      url.searchParams.set('cpf', state.cpf);
+      location.href = url.toString();
+    } catch(e) {
+      await think();
+      bubble('Não consegui abrir a sala agora. Vamos tentar novamente em alguns segundos. Se persistir, volte à recepção e tente mais tarde.');
     }
+  }
 
-    // envio de mensagem (ornamental aqui)
-    $("#send").addEventListener("click", ()=>{
-      const v = $("#quick").value.trim();
-      if(!v) return;
-      typeReception("Recebi sua mensagem, obrigado!");
-      $("#quick").value = "";
-    });
-  </script>
+  sendBtn.addEventListener('click', () => handleMessage(input.value));
+  input.addEventListener('keydown', (e) => { if (e.key==='Enter') handleMessage(input.value); });
+
+  // Start flow
+  start();
+})();
+</script>
 </body>
 </html>
