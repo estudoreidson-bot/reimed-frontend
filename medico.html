@@ -73,35 +73,60 @@
   <script>
     // ====== Config ======
 
-    // ====== Estado ======
-    let awaitingApproval = false;
-    let pollTimer = null;
-    function authHeadersPatient(){ const t = localStorage.getItem('patient_token')||""; return t ? { "Authorization":"Bearer "+t } : {}; }
-    async function pollApprovalOnce(){
-      try{
-        const res = await fetch(API_BASE + "/patient/docs", { headers: { ...authHeadersPatient() } });
-        const data = await res.json();
-        const lastId = Number(localStorage.getItem('lastDocId')||0);
-        const hit = (data.items||[]).find(it => Number(it.id)===lastId && it.status==="aprovado" && it.pdfUrl);
-        if(hit){ clearInterval(pollTimer); pollTimer=null; awaitingApproval=false; showDownload(hit); }
-      }catch(e){}
+// ====== Estado de aprovação ======
+let awaitingApproval = false;
+let pollTimer = null;
+
+function authHeadersPatient(){
+  const t = localStorage.getItem('patient_token')||"";
+  return t ? { "Authorization":"Bearer "+t } : {};
+}
+
+async function pollApprovalOnce(){
+  try{
+    const res = await fetch(API_BASE + "/patient/docs", { headers: { ...authHeadersPatient() } });
+    const data = await res.json();
+    const lastId = Number(localStorage.getItem('lastDocId')||0);
+    const hit = (data.items||[]).find(it => Number(it.id)===lastId && it.status==="aprovado" && it.pdfUrl);
+    if(hit){
+      clearInterval(pollTimer); pollTimer=null; awaitingApproval=false;
+      showDownload(hit);
     }
-    function startPollApproval(){ awaitingApproval=true; if(pollTimer) clearInterval(pollTimer); pollTimer=setInterval(pollApprovalOnce,5000); pollApprovalOnce(); }
-    function showDownload(doc){
-      const msg = document.createElement("div"); msg.className="msg assistant";
-      msg.innerHTML = '<p>Receita aprovada pelo médico. Ao clicar no botão abaixo, o PDF será salvo no seu celular. Leve a receita à farmácia do município ou às farmácias parceiras.</p><p><button id="btn_baixar" class="send">Baixar receita (PDF)</button></p>';
-      chat.appendChild(msg); chat.scrollTop = chat.scrollHeight;
-      document.getElementById("btn_baixar").onclick = ()=>{
-        const a = document.createElement("a"); a.href = API_BASE + doc.pdfUrl; a.download = "receita-"+doc.id+".pdf"; document.body.appendChild(a); a.click(); a.remove();
-        const fim = document.createElement("div"); fim.className="msg assistant"; fim.textContent = "Sua consulta será encerrada agora. Obrigado(a) por utilizar a Queimadas Telemedicina."; chat.appendChild(fim);
-        setTimeout(()=>{ location.replace("receptionist.html"); }, 2000);
-      };
-    }
-    function isRelevantQuestion(t){ const s = String(t||"").toLowerCase(); return /(receita|dose|posologia|medic|efeito|colateral|diagn[oó]stic|orienta|uso|farm[aá]cia)/.test(s); }
+  }catch(e){ /* silencioso */ }
+}
+
+function startPollApproval(){
+  awaitingApproval = true;
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollApprovalOnce, 5000);
+  pollApprovalOnce();
+}
+
+function showDownload(doc){
+  const msg = document.createElement("div"); msg.className="msg assistant";
+  msg.innerHTML = '<p>Receita aprovada pelo médico. Ao clicar no botão abaixo, o PDF será salvo no seu celular. Leve a receita na farmácia do município ou nas farmácias parceiras.</p><p><button id="btn_baixar" class="send">Baixar receita (PDF)</button></p>';
+  chat.appendChild(msg); chat.scrollTop = chat.scrollHeight;
+  document.getElementById("btn_baixar").onclick = ()=>{
+    const a = document.createElement("a");
+    a.href = API_BASE + doc.pdfUrl;
+    a.download = "receita-"+doc.id+".pdf";
+    document.body.appendChild(a); a.click(); a.remove();
+    const fim = document.createElement("div"); fim.className="msg assistant";
+    fim.textContent = "Sua consulta será encerrada agora. Obrigado(a) por utilizar a Queimadas Telemedicina.";
+    chat.appendChild(fim);
+    setTimeout(()=>{ location.replace("receptionist.html"); }, 2000);
+  };
+}
+
+function isRelevantQuestion(t){
+  const s = String(t||"").toLowerCase();
+  return /(receita|dose|posolog|medic|efeito|colateral|diagn[oó]stic|orienta|uso|farm[aá]cia)/.test(s);
+}
 
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
     const ESPECIALIDADE = (localStorage.getItem("selectedSpecialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
-// ====== Estado ======
+
+    // ====== Estado ======
     const chat = document.getElementById("chat");
     const input = document.getElementById("msg");
     const sendBtn = document.getElementById("send");
