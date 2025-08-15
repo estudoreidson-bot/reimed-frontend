@@ -92,7 +92,7 @@ function authHeadersPatient(){
 
 function onlyDigits(s){ return String(s||"").replace(/\D/g,""); }
 
-function isMedicalQuestion(t){
+function isMedicalQuestion_REMOVED(t){
   const s = String(t||"").toLowerCase();
   return /(receita|dose|posolog|medic|rem[eé]dio|analg[eé]sico|antiinflamat[oó]rio|efeito|colateral|diagn[oó]stic|orienta|uso|farm[aá]cia|dor|febre|tosse|enjoo|exa?me|resultado|press[aã]o|glic|alergia|sintoma|tratamento|cid|atestado|encaminhamento|reconsulta|retorno|agendar)/.test(s);
 }
@@ -233,7 +233,7 @@ function showDownload(doc){
     async function enviarTexto(){
       const txt = (input.value || "").trim();
       if(!txt) return;
-      if(!isMedicalQuestion(txt)){ addMsg("assistant", SHORT_REDIRECT()); input.value=""; return; }
+      if(!isMedicalQuestion_REMOVED(txt)){ addMsg("assistant", SHORT_REDIRECT()); input.value=""; return; }
       historico.push({ role:"user", content: txt });
       addMsg("user", txt);
       input.value = "";
