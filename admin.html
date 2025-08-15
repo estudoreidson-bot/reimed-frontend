@@ -37,6 +37,9 @@
 <body>
   <div class="container" id="app">
     <header>
+  <nav style='padding:8px 16px'>
+    <button id="link_pront" class="secondary">Prontuários</button>
+  </nav>
       <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
       <div>
         <h1>Área do Médico Administrador</h1>
@@ -230,42 +233,51 @@ els.imprimir.onclick = async ()=>{
   w.document.close(); w.focus(); w.print();
 };
 
-// Estado inicial
-// ---- Prontuários ----
-const p_cpf = document.getElementById('p_cpf');
-const p_buscar = document.getElementById('p_buscar');
-const p_res = document.getElementById('p_res');
 
-function digits(v){ return String(v||'').replace(/\D/g,''); }
-
-p_buscar.onclick = async ()=>{
-  p_res.innerHTML = "";
-  const cpf = digits(p_cpf.value);
-  if(cpf.length!==11){ p_res.textContent = "Informe um CPF válido (11 dígitos)."; return; }
-  try{
-    const data = await api("/admin/prontuarios/"+cpf, { method:"GET" });
-    let html = "";
-    if(data.paciente){
-      html += "<p><strong>Paciente:</strong> "+data.paciente.nome+" — CPF "+data.paciente.cpf+" — "+(data.paciente.email||"")+"</p>";
-    } else {
-      html += "<p><strong>Paciente não encontrado no cadastro.</strong></p>";
-    }
-    if((data.documentos||[]).length===0){
-      html += "<p>Nenhum documento/receita associado a este CPF.</p>";
-    } else {
-      html += "<h4>Documentos</h4>";
-      html += "<ul>";
-      for(const d of data.documentos){
-        html += "<li>#"+d.id+" — "+d.tipo+" — "+(d.status||"")+" — "+(d.createdAt||"")+"</li>";
-      }
-      html += "</ul>";
-    }
-    p_res.innerHTML = html;
-  }catch(e){
-    p_res.textContent = "Falha ao buscar prontuário.";
-  }
+// ====== Prontuários (busca por CPF) ======
+const pront = {
+  root: document.getElementById('prontuarios'),
+  tbl: document.getElementById('pront_tbl'),
+  cpf: document.getElementById('pront_cpf'),
+  buscar: document.getElementById('pront_buscar'),
+  voltar: document.getElementById('pront_voltar'),
+  link: document.getElementById('link_pront')
 };
 
+function onlyDigits(s){ return String(s||"").replace(/\D/g,""); }
+
+pront.link?.addEventListener('click', ()=>{
+  pront.root.style.display = '';
+  window.scrollTo({ top: pront.root.offsetTop-12, behavior: 'smooth' });
+});
+
+pront.voltar?.addEventListener('click', ()=>{
+  pront.root.style.display = 'none';
+});
+
+pront.buscar?.addEventListener('click', async ()=>{
+  const cpf = onlyDigits(pront.cpf.value);
+  if(!cpf){ alert("Informe um CPF para buscar"); return; }
+  const qs = buildRangeQS();
+  const data = await api("/admin/docs"+qs);
+  const arr = (data.items||[]).filter(d => onlyDigits(d.pacienteCPF) === cpf);
+  pront.tbl.innerHTML = "";
+  for(const d of arr){
+    const tr = document.createElement('tr');
+    tr.innerHTML = "<td>"+d.id+"</td><td>"+new Date(d.createdAt).toLocaleString()+"</td><td>"+d.tipo+"</td>"+
+                   "<td><span class='pill "+d.status+"'>"+d.status+"</span></td>"+
+                   "<td>"+(d.pacienteNome||"-")+"</td><td>"+(d.pacienteCPF||"-")+"</td><td class='actions'></td>";
+    const actions = tr.querySelector('.actions');
+    const ver = document.createElement('button'); ver.textContent="Ver/Editar"; ver.onclick = ()=> openModal(d);
+    actions.appendChild(ver);
+    if(d.pdfUrl){ const pdf = document.createElement('a'); pdf.textContent="PDF"; pdf.href = API_BASE + d.pdfUrl; pdf.target="_blank"; pdf.className="secondary"; actions.appendChild(pdf); }
+    pront.tbl.appendChild(tr);
+  }
+  if(!arr.length){ pront.tbl.innerHTML = "<tr><td colspan='7' style='text-align:center;color:#64748b'>Nenhum documento encontrado para este CPF no período selecionado.</td></tr>"; }
+});
+
+
+// Estado inicial
 if(token){ setLogged(true); loadSummary().then(loadDocs).catch(()=>setLogged(false)); }
 </script>
 </body>
