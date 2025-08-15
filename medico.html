@@ -76,13 +76,6 @@
 // ====== Estado/aprovação e foco no caso ======
 let awaitingApproval = false;
 let pollTimer = null;
-function SHORT_REDIRECT(){
-  try{
-    const esp = (typeof ESPECIALIDADE!== "undefined" && ESPECIALIDADE) ? ESPECIALIDADE : (localStorage.getItem("selectedSpecialty") || "profissional");
-    return `Sou seu(ua) ${esp} nesta consulta. Para garantir agilidade e qualidade, vamos focar somente neste caso clínico. Novos assuntos/sintomas → recepção para novo atendimento.`;
-  }catch(_e){
-    return "Para garantir agilidade e qualidade, vamos focar somente neste caso clínico. Novos assuntos/sintomas → recepção para novo atendimento.";
-  }
 }
 
 function authHeadersPatient(){
