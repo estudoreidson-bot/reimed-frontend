@@ -73,7 +73,7 @@
   <script>
     // ====== Config ======
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
-    const ESPECIALIDADE = (sessionStorage.getItem("specialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
+    const ESPECIALIDADE = new URLSearchParams(location.search).get("especialidade") || "Clínico Geral";
 
     // ====== Estado ======
     const chat = document.getElementById("chat");
@@ -94,19 +94,13 @@
       // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
-
-          // Evita duplicar documento na mesma consulta
-          if (sessionStorage.getItem('docSentForSession') === (HS&&HS.sessionId)){
-            return; // já enviado
-          }
-
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
             headers:{ "Content-Type":"application/json" },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).then(()=>{ try{ sessionStorage.setItem('docSentForSession', (HS&&HS.sessionId)||''); }catch(_){} }).catch(()=>{});
+          }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -121,19 +115,13 @@
       // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
-
-          // Evita duplicar documento na mesma consulta
-          if (sessionStorage.getItem('docSentForSession') === (HS&&HS.sessionId)){
-            return; // já enviado
-          }
-
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
             headers:{ "Content-Type":"application/json" },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).then(()=>{ try{ sessionStorage.setItem('docSentForSession', (HS&&HS.sessionId)||''); }catch(_){} }).catch(()=>{});
+          }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -183,14 +171,6 @@
 
     async function enviarTexto(){
       const txt = (input.value || "").trim();
-
-            // Intercepta perguntas sobre IA e assuntos fora da medicina
-            if(/\b(você|voce|vc)\s*(é|eh)\s*i+\s*\??/i.test(txt) || /\bé\s*i+a\b/i.test(txt)){
-              const frase = "Sou o médico desta teleconsulta e só posso ajudar com questões de saúde nesta sala. Vamos focar no seu quadro. Depois disso, volte à anamnese.";
-              addMsg("assistant", frase);
-              input.value = "";
-              return;
-            }
       if(!txt) return;
       historico.push({ role:"user", content: txt });
       addMsg("user", txt);
