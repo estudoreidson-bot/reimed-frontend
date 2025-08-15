@@ -231,6 +231,41 @@ els.imprimir.onclick = async ()=>{
 };
 
 // Estado inicial
+// ---- Prontuários ----
+const p_cpf = document.getElementById('p_cpf');
+const p_buscar = document.getElementById('p_buscar');
+const p_res = document.getElementById('p_res');
+
+function digits(v){ return String(v||'').replace(/\D/g,''); }
+
+p_buscar.onclick = async ()=>{
+  p_res.innerHTML = "";
+  const cpf = digits(p_cpf.value);
+  if(cpf.length!==11){ p_res.textContent = "Informe um CPF válido (11 dígitos)."; return; }
+  try{
+    const data = await api("/admin/prontuarios/"+cpf, { method:"GET" });
+    let html = "";
+    if(data.paciente){
+      html += "<p><strong>Paciente:</strong> "+data.paciente.nome+" — CPF "+data.paciente.cpf+" — "+(data.paciente.email||"")+"</p>";
+    } else {
+      html += "<p><strong>Paciente não encontrado no cadastro.</strong></p>";
+    }
+    if((data.documentos||[]).length===0){
+      html += "<p>Nenhum documento/receita associado a este CPF.</p>";
+    } else {
+      html += "<h4>Documentos</h4>";
+      html += "<ul>";
+      for(const d of data.documentos){
+        html += "<li>#"+d.id+" — "+d.tipo+" — "+(d.status||"")+" — "+(d.createdAt||"")+"</li>";
+      }
+      html += "</ul>";
+    }
+    p_res.innerHTML = html;
+  }catch(e){
+    p_res.textContent = "Falha ao buscar prontuário.";
+  }
+};
+
 if(token){ setLogged(true); loadSummary().then(loadDocs).catch(()=>setLogged(false)); }
 </script>
 </body>
