@@ -73,13 +73,21 @@
   <script>
     // ====== Config ======
 
-// ====== Estado de aprovação ======
+// ====== Estado/aprovação e foco no caso ======
 let awaitingApproval = false;
 let pollTimer = null;
+const SHORT_REDIRECT = `Sou seu(ua) ${ESPECIALIDADE} nesta consulta. Para garantir agilidade e qualidade, vamos focar somente neste caso clínico. Novos assuntos/sintomas → recepção para novo atendimento.`;
 
 function authHeadersPatient(){
   const t = localStorage.getItem('patient_token')||"";
   return t ? { "Authorization":"Bearer "+t } : {};
+}
+
+function onlyDigits(s){ return String(s||"").replace(/\D/g,""); }
+
+function isMedicalQuestion(t){
+  const s = String(t||"").toLowerCase();
+  return /(receita|dose|posolog|medic|rem[eé]dio|analg[eé]sico|antiinflamat[oó]rio|efeito|colateral|diagn[oó]stic|orienta|uso|farm[aá]cia|dor|febre|tosse|enjoo|exa?me|resultado|press[aã]o|glic|alergia|sintoma|tratamento|cid|atestado|encaminhamento|reconsulta|retorno|agendar)/.test(s);
 }
 
 async function pollApprovalOnce(){
@@ -118,11 +126,6 @@ function showDownload(doc){
   };
 }
 
-function isRelevantQuestion(t){
-  const s = String(t||"").toLowerCase();
-  return /(receita|dose|posolog|medic|efeito|colateral|diagn[oó]stic|orienta|uso|farm[aá]cia)/.test(s);
-}
-
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
     const ESPECIALIDADE = (localStorage.getItem("selectedSpecialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
 
@@ -147,8 +150,11 @@ function isRelevantQuestion(t){
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){ awaitingApproval = true;
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text }) })
-          .then(r=>r.json()).then(d=>{ try{ localStorage.setItem("lastDocId", String(d.id||"")); startPollApproval(); }catch(_e){} }).catch(()=>{});
+          fetch(API_BASE + "/admin/docs", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
+          }).then(r=>r.json()).then(d=>{ try{ localStorage.setItem("lastDocId", String(d.id||"")); startPollApproval(); }catch(_e){} }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -165,8 +171,11 @@ function isRelevantQuestion(t){
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){ awaitingApproval = true;
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text }) })
-          .then(r=>r.json()).then(d=>{ try{ localStorage.setItem("lastDocId", String(d.id||"")); startPollApproval(); }catch(_e){} }).catch(()=>{});
+          fetch(API_BASE + "/admin/docs", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
+          }).then(r=>r.json()).then(d=>{ try{ localStorage.setItem("lastDocId", String(d.id||"")); startPollApproval(); }catch(_e){} }).catch(()=>{});
         }
       }catch(_e){}
     }
