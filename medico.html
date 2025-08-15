@@ -73,6 +73,33 @@
   <script>
     // ====== Config ======
 
+// --- Interceptores estritos (apenas 2 casos) ---
+function SHORT_REDIRECT(){ 
+  return `Sou seu(ua) ${ESPECIALIDADE} nesta consulta. Para garantir agilidade e qualidade, vamos focar somente neste caso clínico. Novos assuntos/sintomas → recepção para novo atendimento.`; 
+}
+function SHORT_AI(){ 
+  return `Não. Sou seu(ua) ${ESPECIALIDADE} nesta consulta. Para garantir agilidade e qualidade, vamos focar somente neste caso clínico. Novos assuntos/sintomas → recepção para novo atendimento.`; 
+}
+function norm(t){
+  return String(t||"").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function isAskAI(t){
+  const s = norm(t);
+  const r1 = /\b(vc|voce)\b.*\b(e|eh)\b.*\b(uma\s*)?(ia|i\.a\.|inteligencia\s*artificial|robo|chatgpt|bot)\b/;
+  const r2 = /\b(ia|i\.a\.|inteligencia\s*artificial|robo|chatgpt|bot)\b.*\b(vc|voce)\b/;
+  return r1.test(s) || r2.test(s);
+}
+function isAskSpecialty(t){
+  const s = norm(t);
+  const esp = norm(ESPECIALIDADE);
+  if(!esp) return false;
+  const r1 = new RegExp(`\\b(vc|voce)\\b.*\\b(e|eh)\\b.*\\b(o|a|um|uma)?\\s*${escReg(esp)}\\b`);
+  const r2 = /\bqual\b.*\bespecialidade\b/;
+  return r1.test(s) || r2.test(s);
+}
+
+
 // ====== Estado/aprovação e foco no caso ======
 let awaitingApproval = false;
 let pollTimer = null;
@@ -226,7 +253,9 @@ function showDownload(doc){
     async function enviarTexto(){
       const txt = (input.value || "").trim();
       if(!txt) return;
-      if(!isMedicalQuestion_REMOVED(txt)){ addMsg("assistant", SHORT_REDIRECT()); input.value=""; return; }
+      
+      if(isAskAI(txt)){ addMsg("assistant", SHORT_AI()); input.value=""; return; }
+      if(isAskSpecialty(txt)){ addMsg("assistant", `Sim, sou seu(ua) ${ESPECIALIDADE} nesta consulta.`); input.value=""; return; }
       historico.push({ role:"user", content: txt });
       addMsg("user", txt);
       input.value = "";
