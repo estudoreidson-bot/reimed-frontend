@@ -12,27 +12,40 @@
   <h1>Queimadas Telemedicina</h1>
 </header>
 <main>
-<div class="chat"><div class="msg recep">Preparando sua sala com o médico…</div></div>
-<footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
+  <div class="chat">
+    <div class="msg recep" id="msg">Preparando sua sala com o médico…</div>
+  </div>
+  <footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
 </main>
+
 <script>
-const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-api.onrender.com');
-(function start(){
-  // Proteção de fluxo: sem triagem -> volta para recepção
-  if(!localStorage.getItem('triageComplete') || !localStorage.getItem('selectedSpecialty')){
-    location.replace('receptionist.html'); return;
+const API_BASE = 'https://remedy-queimadas-api.onrender.com';
+const TOKEN = (localStorage.getItem('token')||'').trim();
+
+function status(t){ const el = document.getElementById('msg'); if(el) el.textContent = t; }
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+(async ()=>{
+  try{
+    status('Conectando…');
+    const specialty = localStorage.getItem('selectedSpecialty') || 'Clínica Médica';
+    const headers = { 'Content-Type': 'application/json' };
+    if(TOKEN) headers['Authorization'] = 'Bearer '+TOKEN;
+
+    const res = await fetch(API_BASE + '/api/session', {
+      method:'POST', headers, body: JSON.stringify({ specialty })
+    });
+
+    if(res.ok){
+      const data = await res.json().catch(()=>({}));
+      if(data && data.sessionId){ localStorage.setItem('sessionId', data.sessionId); }
+    }
+  }catch(e){
+    // segue mesmo assim
+  }finally{
+    // independentemente de sucesso, ir para a sala do médico
+    location.replace('medico.html');
   }
-  const specialty = localStorage.getItem('selectedSpecialty');
-  fetch(API_BASE+'/api/session',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({specialty})
-  }).then(r=>r.json()).then(d=>{
-    localStorage.setItem('sessionId', d.sessionId||'');
-    location.replace('medico.html');
-  }).catch(()=>{
-    // mesmo que a API caia, segue para a sala (o médico vai avisar erro)
-    location.replace('medico.html');
-  });
 })();
 </script>
 </body>
