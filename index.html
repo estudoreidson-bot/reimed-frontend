@@ -22,7 +22,6 @@
     .atende{display:flex;justify-content:center;margin-top:16px}
     .atende img{height:40px;opacity:.9}
     h2{margin:8px 0 12px}
-    .hidden{display:none}
   </style>
 </head>
 <body>
@@ -46,25 +45,40 @@
         <button id="btn_forgot" class="link">Esqueceu a senha?</button>
         <div id="login_msg" class="msg"></div>
 
+        <!-- Painel de recuperação -->
         <div id="forgot_panel" class="card" style="display:none;margin-top:12px;border:1px solid #e5e7eb;border-radius:10px;padding:10px">
           <h3 style="margin:0 0 6px 0;font-size:1rem">Recuperar senha</h3>
+
           <label>E-mail cadastrado</label>
           <input id="forgot_email" type="email" placeholder="seu@email.com" autocomplete="email">
           <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="btn_send_reset">Enviar</button>
+            <button id="btn_send_reset">Enviar e-mail</button>
             <button id="btn_cancel_reset" class="link">Cancelar</button>
           </div>
+
+          <hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb">
+
+          <label>Código recebido por e-mail</label>
+          <input id="reset_code" type="text" placeholder="Ex.: A1B2C3">
+          <label>Nova senha</label>
+          <input id="reset_newpwd" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="btn_apply_reset">Redefinir senha</button>
+          </div>
+
           <div id="forgot_msg" class="msg"></div>
-          <p class="muted">Enviaremos instruções para redefinição de senha no seu e-mail.</p>
+          <p class="muted">Você receberá um e-mail com instruções/código. Depois, informe o código acima e escolha a nova senha.</p>
         </div>
       </div>
 
+      <!-- Chamada para cadastro -->
       <div class="col" id="register_cta">
         <h2>Cadastro</h2>
         <p class="muted">Ainda não tem conta?</p>
         <button id="btn_show_register">Cadastre</button>
       </div>
 
+      <!-- Formulário de cadastro (oculto até clicar) -->
       <div class="col" id="register_panel" style="display:none">
         <h2>Criar conta</h2>
         <label>Nome completo</label>
@@ -80,128 +94,4 @@
       </div>
     </div>
   </div>
-  <footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
-</main>
-
-<script>
-const API_BASE = (localStorage.getItem('API_BASE') || '').trim() || (location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : 'https://reimed-backend.onrender.com');
-
-function onlyDigits(s){return (s||'').replace(/\D+/g,'');}
-
-async function call(path, opts){
-  const r = await fetch(API_BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...opts
-  });
-  if(!r.ok){
-    let msg = '';
-    try{ const j = await r.json(); msg = j.message || j.detail || ''; }catch(_e){}
-    throw new Error(msg || ('HTTP '+r.status));
-  }
-  const ct = r.headers.get('content-type') || '';
-  if(ct.includes('application/json')) return r.json();
-  return r.text();
-}
-
-document.getElementById('btn_login').onclick = async ()=>{
-  const cpf = onlyDigits(document.getElementById('login_cpf').value);
-  const password = document.getElementById('login_pwd').value;
-  const email = document.getElementById('login_email').value.trim();
-  const msg = document.getElementById('login_msg');
-  msg.textContent = '';
-  if(!cpf && !email){ msg.textContent = 'Informe CPF ou e-mail.'; return; }
-  if(!password){ msg.textContent = 'Informe sua senha.'; return; }
-  try{
-    const body = cpf ? { cpf, password } : { email, password };
-    const r = await call('/auth/patient/login', { method:'POST', body: JSON.stringify(body) });
-    localStorage.setItem('token', r.token || '');
-    location.href = 'paciente.html';
-  }catch(e){
-    msg.textContent = 'Falha ao entrar: ' + (e.message||'verifique seus dados');
-  }
-};
-
-// Esqueci a senha: abre painel para inserir e-mail e envia instruções
-(function(){
-  const btnForgot = document.getElementById('btn_forgot');
-  const panel = document.getElementById('forgot_panel');
-  const emailInput = document.getElementById('forgot_email');
-  const msg = document.getElementById('forgot_msg');
-  const btnSend = document.getElementById('btn_send_reset');
-  const btnCancel = document.getElementById('btn_cancel_reset');
-
-  if(btnForgot && panel){
-    btnForgot.addEventListener('click', ()=>{
-      panel.style.display = 'block';
-      msg.textContent = '';
-      if(emailInput) emailInput.focus();
-    });
-  }
-  if(btnCancel && panel){
-    btnCancel.addEventListener('click', ()=>{
-      panel.style.display = 'none';
-      msg.textContent = '';
-    });
-  }
-  if(btnSend){
-    btnSend.addEventListener('click', async ()=>{
-      const email = (emailInput?.value||'').trim();
-      msg.style.color = '#b91c1c';
-      msg.textContent = '';
-      if(!email){ msg.textContent = 'Informe seu e-mail cadastrado.'; return; }
-      try{
-        await call('/auth/patient/forgot', { method:'POST', body: JSON.stringify({ cpfOrEmail: email }) });
-        msg.style.color = '#0f5132';
-        msg.textContent = 'Pronto! Enviamos instruções para o seu e-mail.';
-      }catch(e){
-        msg.style.color = '#b91c1c';
-        msg.textContent = 'Não foi possível iniciar a recuperação. Verifique o e-mail informado.';
-      }
-    });
-  }
-})();
-
-// Cadastro: revelar formulário ao clicar em "Cadastre"
-(function(){
-  const btnShow = document.getElementById('btn_show_register');
-  if(btnShow){
-    btnShow.addEventListener('click', ()=>{
-      const cta = document.getElementById('register_cta');
-      const panel = document.getElementById('register_panel');
-      if(cta) cta.style.display = 'none';
-      if(panel) panel.style.display = 'block';
-      const nome = document.getElementById('reg_nome');
-      if(nome) nome.focus();
-    });
-  }
-})();
-
-document.getElementById('btn_register').onclick = async ()=>{
-  const nome = document.getElementById('reg_nome').value.trim();
-  const cpf = onlyDigits(document.getElementById('reg_cpf').value);
-  const email = document.getElementById('reg_email').value.trim();
-  const password = document.getElementById('reg_pwd').value;
-  const msg = document.getElementById('reg_msg');
-  msg.style.color = '#b91c1c';
-  msg.textContent = '';
-
-  const cpfOk = cpf && cpf.length===11;
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const passOk = password && password.length>=8 && /[A-Za-z]/.test(password) && /\d/.test(password);
-
-  if(!(nome && cpfOk && emailOk && passOk)){
-    msg.textContent = 'Preencha corretamente nome, CPF (11 dígitos), e-mail e senha (mín. 8).';
-    return;
-  }
-  try{
-    await call('/auth/patient/register', { method:'POST', body: JSON.stringify({ nome, cpf, email, password }) });
-    msg.style.color = '#0f5132';
-    msg.textContent = 'Cadastro concluído. Você já pode entrar.';
-  }catch(e){
-    msg.textContent = 'Erro no cadastro: ' + (e.message||'verifique os dados');
-  }
-};
-</script>
-</body>
-</html>
+  <footer class="atende"><img src="atende-mais.png" alt="Atende+"></foot
