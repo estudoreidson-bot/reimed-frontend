@@ -14,8 +14,13 @@
     input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
     button{padding:10px 16px;border:1px solid #0f172a;background:#0f172a;color:#fff;border-radius:8px;cursor:pointer}
     .muted{font-size:.9rem;color:#475569}
-    .link{color:#0f172a;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0}
-    .msg{margin-top:8px;color:#b91c1c}
+    .link{background:transparent;color:#0f172a;border-color:transparent;text-decoration:underline}
+    .msg{margin-top:8px;font-size:.95rem;color:#b91c1c}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    header img{height:70px;border-radius:8px}
+    header .title{font-weight:800;font-size:1.1rem;color:#0f172a}
+    .atende{display:flex;justify-content:center;margin-top:16px}
+    .atende img{height:40px;opacity:.9}
     h2{margin:8px 0 12px}
     .hidden{display:none}
   </style>
@@ -40,17 +45,28 @@
         <button id="btn_login">Entrar</button>
         <button id="btn_forgot" class="link">Esqueceu a senha?</button>
         <div id="login_msg" class="msg"></div>
-</div>
-      
-<div class="col" id="register_cta">
-  <h2>Cadastro</h2>
-  <p class="muted">Ainda não tem conta?</p>
-  <button id="btn_show_register">Cadastre</button>
-</div>
 
-<div class="col" id="register_panel" style="display:none">
-  <h2>Criar conta</h2>
-  
+        <div id="forgot_panel" class="card" style="display:none;margin-top:12px;border:1px solid #e5e7eb;border-radius:10px;padding:10px">
+          <h3 style="margin:0 0 6px 0;font-size:1rem">Recuperar senha</h3>
+          <label>E-mail cadastrado</label>
+          <input id="forgot_email" type="email" placeholder="seu@email.com" autocomplete="email">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="btn_send_reset">Enviar</button>
+            <button id="btn_cancel_reset" class="link">Cancelar</button>
+          </div>
+          <div id="forgot_msg" class="msg"></div>
+          <p class="muted">Enviaremos instruções para redefinição de senha no seu e-mail.</p>
+        </div>
+      </div>
+
+      <div class="col" id="register_cta">
+        <h2>Cadastro</h2>
+        <p class="muted">Ainda não tem conta?</p>
+        <button id="btn_show_register">Cadastre</button>
+      </div>
+
+      <div class="col" id="register_panel" style="display:none">
+        <h2>Criar conta</h2>
         <label>Nome completo</label>
         <input id="reg_nome" type="text" placeholder="Como está no documento">
         <label>CPF</label>
@@ -60,24 +76,32 @@
         <label>Senha</label>
         <input id="reg_pwd" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
         <button id="btn_register">Cadastrar</button>
-        <div id="reg_msg" class="msg">
-</div>
-</div>
+        <div id="reg_msg" class="msg"></div>
+      </div>
     </div>
   </div>
   <footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
 </main>
 
 <script>
-const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-api.onrender.com');
+const API_BASE = (localStorage.getItem('API_BASE') || '').trim() || (location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : 'https://reimed-backend.onrender.com');
 
-function onlyDigits(s){ return String(s||'').replace(/\D/g,''); }
+function onlyDigits(s){return (s||'').replace(/\D+/g,'');}
 
-async function call(path, opt={}){
-  const res = await fetch(API_BASE + path, { ...opt, headers:{ 'Content-Type':'application/json', ...(opt.headers||{}) } });
-  const data = await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error(data.error||'Falha');
-  return data;
+async function call(path, opts){
+  const r = await fetch(API_BASE + path, {
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    ...opts
+  });
+  if(!r.ok){
+    let msg = '';
+    try{ const j = await r.json(); msg = j.message || j.detail || ''; }catch(_e){}
+    throw new Error(msg || ('HTTP '+r.status));
+  }
+  const ct = r.headers.get('content-type') || '';
+  if(ct.includes('application/json')) return r.json();
+  return r.text();
 }
 
 document.getElementById('btn_login').onclick = async ()=>{
@@ -85,69 +109,60 @@ document.getElementById('btn_login').onclick = async ()=>{
   const password = document.getElementById('login_pwd').value;
   const email = document.getElementById('login_email').value.trim();
   const msg = document.getElementById('login_msg');
-  msg.textContent='';
+  msg.textContent = '';
+  if(!cpf && !email){ msg.textContent = 'Informe CPF ou e-mail.'; return; }
+  if(!password){ msg.textContent = 'Informe sua senha.'; return; }
   try{
-    const r = await call('/auth/patient/login', { method:'POST', body: JSON.stringify({ cpf, password }) });
-    // Salva sessão simples do paciente para uso nas telas seguintes
-    localStorage.setItem('patient_token', r.token);
-    localStorage.setItem('pacienteCPF', r.cpf);
-    localStorage.setItem('pacienteNome', r.nome||'');
-    localStorage.setItem('pacienteEmail', r.email||email||'');
-    // Protege fluxo da recepção já existente
-    localStorage.setItem('triageComplete','0');
-    location.replace('receptionist.html');
+    const body = cpf ? { cpf, password } : { email, password };
+    const r = await call('/auth/patient/login', { method:'POST', body: JSON.stringify(body) });
+    localStorage.setItem('token', r.token || '');
+    location.href = 'paciente.html';
   }catch(e){
-    msg.textContent = 'CPF ou senha inválidos.';
+    msg.textContent = 'Falha ao entrar: ' + (e.message||'verifique seus dados');
   }
 };
 
-document.getElementById('btn_forgot').onclick = async ()=>{
-  const cpf = onlyDigits(document.getElementById('login_cpf').value);
-  const email = document.getElementById('login_email').value.trim();
-  const msg = document.getElementById('login_msg');
-  msg.textContent='';
-  try{
-    const r = await call('/auth/patient/forgot', { method:'POST', body: JSON.stringify({ cpfOrEmail: cpf || email }) });
-    msg.textContent = 'Enviamos instruções para o seu e-mail. Código (para testes): ' + (r.code||'(verifique seu e-mail)');
-    try{
-      const code = prompt('Informe o código recebido por e-mail:');
-      if(code){
-        const newPass = prompt('Digite a nova senha:');
-        if(newPass && newPass.length>=8){
-          await call('/auth/patient/reset', { method:'POST', body: JSON.stringify({ code, newPassword: newPass }) });
-          msg.style.color = '#0f5132';
-          msg.textContent = 'Senha redefinida com sucesso. Agora faça login.';
-        } else {
-          msg.textContent = 'Senha não alterada. Informe ao menos 8 caracteres.';
-        }
+// Esqueci a senha: abre painel para inserir e-mail e envia instruções
+(function(){
+  const btnForgot = document.getElementById('btn_forgot');
+  const panel = document.getElementById('forgot_panel');
+  const emailInput = document.getElementById('forgot_email');
+  const msg = document.getElementById('forgot_msg');
+  const btnSend = document.getElementById('btn_send_reset');
+  const btnCancel = document.getElementById('btn_cancel_reset');
+
+  if(btnForgot && panel){
+    btnForgot.addEventListener('click', ()=>{
+      panel.style.display = 'block';
+      msg.textContent = '';
+      if(emailInput) emailInput.focus();
+    });
+  }
+  if(btnCancel && panel){
+    btnCancel.addEventListener('click', ()=>{
+      panel.style.display = 'none';
+      msg.textContent = '';
+    });
+  }
+  if(btnSend){
+    btnSend.addEventListener('click', async ()=>{
+      const email = (emailInput?.value||'').trim();
+      msg.style.color = '#b91c1c';
+      msg.textContent = '';
+      if(!email){ msg.textContent = 'Informe seu e-mail cadastrado.'; return; }
+      try{
+        await call('/auth/patient/forgot', { method:'POST', body: JSON.stringify({ cpfOrEmail: email }) });
+        msg.style.color = '#0f5132';
+        msg.textContent = 'Pronto! Enviamos instruções para o seu e-mail.';
+      }catch(e){
+        msg.style.color = '#b91c1c';
+        msg.textContent = 'Não foi possível iniciar a recuperação. Verifique o e-mail informado.';
       }
-    }catch(_e){ msg.textContent = 'Não foi possível redefinir a senha.'; }
-  }catch(_e){
-    msg.textContent = 'Não foi possível iniciar a recuperação.';
+    });
   }
-};
+})();
 
-document.getElementById('btn_register').onclick = async ()=>{
-  const nome = document.getElementById('reg_nome').value.trim();
-  const cpf = onlyDigits(document.getElementById('reg_cpf').value);
-  const email = document.getElementById('reg_email').value.trim();
-  const password = document.getElementById('reg_pwd').value;
-  const msg = document.getElementById('reg_msg');
-  msg.textContent='';
-  if(!nome || cpf.length!==11 || !email || (password||'').length<8){
-    msg.textContent = 'Preencha corretamente nome, CPF (11 dígitos), e-mail e senha (mín. 8).';
-    return;
-  }
-  try{
-    await call('/auth/patient/register', { method:'POST', body: JSON.stringify({ nome, cpf, email, password }) });
-    msg.style.color = '#0f5132';
-    msg.textContent = 'Cadastro concluído. Você já pode entrar.';
-  }catch(e){
-    msg.textContent = 'Erro no cadastro: ' + (e.message||'verifique os dados');
-  }
-};
-
-// Mostrar painel de cadastro ao clicar
+// Cadastro: revelar formulário ao clicar em "Cadastre"
 (function(){
   const btnShow = document.getElementById('btn_show_register');
   if(btnShow){
@@ -161,6 +176,32 @@ document.getElementById('btn_register').onclick = async ()=>{
     });
   }
 })();
+
+document.getElementById('btn_register').onclick = async ()=>{
+  const nome = document.getElementById('reg_nome').value.trim();
+  const cpf = onlyDigits(document.getElementById('reg_cpf').value);
+  const email = document.getElementById('reg_email').value.trim();
+  const password = document.getElementById('reg_pwd').value;
+  const msg = document.getElementById('reg_msg');
+  msg.style.color = '#b91c1c';
+  msg.textContent = '';
+
+  const cpfOk = cpf && cpf.length===11;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const passOk = password && password.length>=8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+
+  if(!(nome && cpfOk && emailOk && passOk)){
+    msg.textContent = 'Preencha corretamente nome, CPF (11 dígitos), e-mail e senha (mín. 8).';
+    return;
+  }
+  try{
+    await call('/auth/patient/register', { method:'POST', body: JSON.stringify({ nome, cpf, email, password }) });
+    msg.style.color = '#0f5132';
+    msg.textContent = 'Cadastro concluído. Você já pode entrar.';
+  }catch(e){
+    msg.textContent = 'Erro no cadastro: ' + (e.message||'verifique os dados');
+  }
+};
 </script>
 </body>
 </html>
