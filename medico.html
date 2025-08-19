@@ -72,8 +72,59 @@
 
   <script>
     // ====== Config ======
+
+// ====== Estado de aprovação ======
+let awaitingApproval = false;
+let pollTimer = null;
+
+function authHeadersPatient(){
+  const t = localStorage.getItem('patient_token')||"";
+  return t ? { "Authorization":"Bearer "+t } : {};
+}
+
+async function pollApprovalOnce(){
+  try{
+    const res = await fetch(API_BASE + "/patient/docs", { headers: { ...authHeadersPatient() } });
+    const data = await res.json();
+    const lastId = Number(localStorage.getItem('lastDocId')||0);
+    const hit = (data.items||[]).find(it => Number(it.id)===lastId && it.status==="aprovado" && it.pdfUrl);
+    if(hit){
+      clearInterval(pollTimer); pollTimer=null; awaitingApproval=false;
+      showDownload(hit);
+    }
+  }catch(e){ /* silencioso */ }
+}
+
+function startPollApproval(){
+  awaitingApproval = true;
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollApprovalOnce, 5000);
+  pollApprovalOnce();
+}
+
+function showDownload(doc){
+  const msg = document.createElement("div"); msg.className="msg assistant";
+  msg.innerHTML = '<p>Receita aprovada pelo médico. Ao clicar no botão abaixo, o PDF será salvo no seu celular. Leve a receita na farmácia do município ou nas farmácias parceiras.</p><p><button id="btn_baixar" class="send">Baixar receita (PDF)</button></p>';
+  chat.appendChild(msg); chat.scrollTop = chat.scrollHeight;
+  document.getElementById("btn_baixar").onclick = ()=>{
+    const a = document.createElement("a");
+    a.href = API_BASE + doc.pdfUrl;
+    a.download = "receita-"+doc.id+".pdf";
+    document.body.appendChild(a); a.click(); a.remove();
+    const fim = document.createElement("div"); fim.className="msg assistant";
+    fim.textContent = "Sua consulta será encerrada agora. Obrigado(a) por utilizar a Queimadas Telemedicina.";
+    chat.appendChild(fim);
+    setTimeout(()=>{ location.replace("receptionist.html"); }, 2000);
+  };
+}
+
+function isRelevantQuestion(t){
+  const s = String(t||"").toLowerCase();
+  return /(receita|dose|posolog|medic|efeito|colateral|diagn[oó]stic|orienta|uso|farm[aá]cia)/.test(s);
+}
+
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
-    const ESPECIALIDADE = new URLSearchParams(location.search).get("especialidade") || "Clínico Geral";
+    const ESPECIALIDADE = (localStorage.getItem("selectedSpecialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
 
     // ====== Estado ======
     const chat = document.getElementById("chat");
@@ -87,20 +138,17 @@
     function addMsg(role, text){
       const div = document.createElement("div");
       div.className = "msg " + (role === "assistant" ? "m-med" : "m-user");
-      div.textContent = text;
+      div.textContent = String(text||"").replace(/Assinatura\s*digital\s*:\s*aguardando[^\n]*/gi, "").trim();
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
 
       // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
-        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){ awaitingApproval = true;
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
+          fetch(API_BASE + "/admin/docs", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text }) })
+          .then(r=>r.json()).then(d=>{ try{ localStorage.setItem("lastDocId", String(d.id||"")); startPollApproval(); }catch(_e){} }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -114,14 +162,11 @@
 
       // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
-        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){ awaitingApproval = true;
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
+          fetch(API_BASE + "/admin/docs", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text }) })
+          .then(r=>r.json()).then(d=>{ try{ localStorage.setItem("lastDocId", String(d.id||"")); startPollApproval(); }catch(_e){} }).catch(()=>{});
         }
       }catch(_e){}
     }
