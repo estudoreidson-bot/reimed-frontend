@@ -123,7 +123,7 @@ function isRelevantQuestion(t){
   return /(receita|dose|posolog|medic|efeito|colateral|diagn[oó]stic|orienta|uso|farm[aá]cia)/.test(s);
 }
 
-    const API_BASE = 'https://remedy-queimadas-api.onrender.com';
+    const API_BASE = "https://remedy-queimadas-api.onrender.com";
     const ESPECIALIDADE = (localStorage.getItem("selectedSpecialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
 
     // ====== Estado ======
@@ -183,7 +183,7 @@ function isRelevantQuestion(t){
   const pensar = Math.floor(pensarMin + Math.random()*(pensarMax - pensarMin));
   status("Médico pensando…");
   await delay(pensar);
-  const typePerWord = 2300;
+  const typePerWord = 1500;
   const digitar = Math.max(6900, Math.round(words * typePerWord));
   status("Médico digitando…");
   await delay(digitar);
@@ -211,7 +211,7 @@ function isRelevantQuestion(t){
       if(!resp.ok) throw new Error("Falha ao contatar IA");
       const data = await resp.json();
       if(!data.ok) throw new Error("IA indisponível");
-      return data.reply;
+      return sanitizeAssistantText(String(data.reply||""));
     }
 
     async function enviarTexto(){
@@ -221,7 +221,7 @@ function isRelevantQuestion(t){
       addMsg("user", txt);
       input.value = "";
       try{
-        const resposta = await chamarIA();
+        let resposta; if (detectIdentityProbe(text)) { resposta = IDENTITY_REPLY; } else { resposta = await chamarIA(); }
         await pensandoEDigitando(resposta);
         historico.push({ role:"assistant", content: resposta });
         addMsg("assistant", resposta);
@@ -238,7 +238,7 @@ function isRelevantQuestion(t){
       addMsg("assistant", "Arquivos recebidos. Obrigado! (análise em breve)");
       historico.push({ role:"user", content:`[Paciente informa que enviou um arquivo: ${f.name} (${Math.round(f.size/1024)} KB). Oriente a enviar fotos nítidas/boas se necessário e siga com a anamnese.]` });
       try{
-        const resposta = await chamarIA();
+        let resposta; if (detectIdentityProbe(text)) { resposta = IDENTITY_REPLY; } else { resposta = await chamarIA(); }
         await pensandoEDigitando(resposta);
         historico.push({ role:"assistant", content: resposta });
         addMsg("assistant", resposta);
