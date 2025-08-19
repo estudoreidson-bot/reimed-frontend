@@ -25,7 +25,9 @@
 
     <footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
     <div class="legal">
-      Base legal da Telemedicina no Brasil (resumo): Res. CFM 2.314/2022 e LGPD (Lei 13.709/2018).
+      Base legal da Telemedicina no Brasil (resumo): legislação federal vigente e normas do CFM
+      (ex.: Resolução CFM 2.314/2022), com observância à LGPD (Lei 13.709/2018). Atendimento
+      remoto com registro em prontuário, identificação das partes e consentimento informado.
     </div>
   </main>
 
@@ -36,130 +38,23 @@ const lista = document.getElementById('lista-esp');
 const pre = document.getElementById('pre-transfer');
 const aguarde = document.getElementById('aguarde');
 
-const API_BASE = 'https://remedy-queimadas-api.onrender.com';
-const TOKEN = (localStorage.getItem('token')||'').trim();
-
-async function api(path, opts={}){
-  const r = await fetch(API_BASE + path, {
-    headers: { 'Content-Type': 'application/json', ...(TOKEN ? {'Authorization': 'Bearer '+TOKEN}: {}) },
-    ...opts
-  });
-  if(!r.ok){
-    let msg=''; try{ const j=await r.json(); msg = j.message || j.detail || j.error || ''; }catch{}
-    throw new Error(msg || ('HTTP '+r.status));
-  }
-  const ct = r.headers.get('content-type')||'';
-  return ct.includes('application/json') ? r.json() : r.text();
-}
-
 function pushMsg(el){ chat.appendChild(el); chat.scrollTop = chat.scrollHeight; }
 
-function typeMessage(text, klass="recep", min=1000){
+function typeMessage(text, klass="recep", min=10000){
   const m = document.createElement('div');
   m.className = 'msg '+klass;
-  const delay = Math.max(min, Math.min(4000, text.length*30));
+  const delay = Math.max(min, Math.min(20000, text.length*60)); // 60ms por caractere, min 10s
   m.textContent = 'Recepção está digitando…';
   pushMsg(m);
   setTimeout(()=>{ m.textContent = text; }, delay);
-  return new Promise(res=>setTimeout(res, delay+100));
+  return new Promise(res=>setTimeout(res, delay+200));
 }
 
-function makeChoices(){
-  const wrap = document.createElement('div');
-  wrap.className = 'msg recep';
-  wrap.innerHTML = `
-    <div style="margin-bottom:8px;"><strong>Como você deseja ser atendido hoje?</strong></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button type="button" class="btn" id="opt-consulta">Consulta</button>
-      <button type="button" class="btn" id="opt-historico">Histórico de consultas</button>
-      <button type="button" class="btn" id="opt-contato">Entre em contato</button>
-    </div>
-  `;
-  return wrap;
-}
-
-function askMode(){
-  return new Promise((resolve)=>{
-    const el = makeChoices();
-    pushMsg(el);
-    el.querySelector('#opt-consulta').addEventListener('click', ()=>resolve('consulta'));
-    el.querySelector('#opt-historico').addEventListener('click', ()=>resolve('historico'));
-    el.querySelector('#opt-contato').addEventListener('click', ()=>resolve('contato'));
-  });
-}
-
-async function showHistorico(){
-  if(!TOKEN){
-    await typeMessage('Você precisa entrar com seu CPF/senha para ver seu histórico.', 'system', 500);
-    return;
-  }
-  await typeMessage('Certo. Vou buscar seu histórico aprovado pelo médico administrador…');
-  let res;
-  try{ res = await api('/patient/docs'); }
-  catch(e){ await typeMessage('Não consegui obter seu histórico agora. Tente novamente mais tarde.', 'system', 500); return; }
-
-  const items = (res.items||[]).filter(d=>String(d.status||'').toLowerCase()==='aprovado');
-  const box = document.createElement('div'); box.className = 'msg recep';
-  if(items.length===0){ box.innerHTML = '<strong>Você ainda não possui documentos aprovados.</strong>'; pushMsg(box); return; }
-
-  items.sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  const byTipo = { receita:[], exame:[], relatorio:[], outros:[] };
-  for(const d of items){
-    const t = String(d.tipo||'').toLowerCase();
-    const k = t.includes('receita') ? 'receita' : t.includes('exame') ? 'exame' : t.includes('relat') ? 'relatorio' : 'outros';
-    byTipo[k].push(d);
-  }
-  function fmt(dt){ try{ return new Date(dt).toLocaleString('pt-BR'); }catch{ return dt||''; } }
-  function renderList(list, titulo){
-    if(list.length===0) return '';
-    let h = `<div style="margin:6px 0 4px 0"><strong>${titulo}</strong></div><ul style="margin:0 0 6px 16px;padding:0;">`;
-    for(const d of list){
-      const link = d.pdfUrl ? `<a href="${d.pdfUrl}" target="_blank" rel="noopener">Abrir PDF</a>` : '';
-      h += `<li>${fmt(d.createdAt)} — ${d.tipo||'Documento'} ${link ? ' — '+link : ''}</li>`;
-    }
-    h += '</ul>'; return h;
-  }
-  let html = '';
-  html += renderList(byTipo.receita, 'Receitas aprovadas');
-  html += renderList(byTipo.exame, 'Exames aprovados');
-  html += renderList(byTipo.relatorio, 'Relatórios aprovados');
-  html += renderList(byTipo.outros, 'Outros documentos aprovados');
-  html += `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" id="btn_ir_consulta">Iniciar consulta</button></div>`;
-  box.innerHTML = html; pushMsg(box);
-  box.querySelector('#btn_ir_consulta')?.addEventListener('click', ()=> startConsulta());
-}
-
-async function showContato(){
-  let paciente = null;
-  if(TOKEN){ try{ const r = await api('/auth/patient/profile'); paciente = r; }catch{} }
-  const box = document.createElement('div'); box.className = 'msg recep';
-  const nome = paciente?.nome || ''; const cpf = paciente?.cpf || '';
-  const emailDestino = 'estudoreidson@gmail.com';
-  box.innerHTML = `
-    <div style="margin-bottom:8px"><strong>Escreva sua mensagem para a equipe.</strong></div>
-    <textarea id="contato_txt" rows="5" style="width:100%;padding:10px;border:1px solid var(--borda);border-radius:10px" placeholder="Digite aqui…"></textarea>
-    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-      <button type="button" class="btn" id="contato_enviar">Enviar</button>
-      <button type="button" class="btn" id="contato_cancelar">Cancelar</button>
-    </div>
-    <div style="margin-top:6px;color:#475569;font-size:.9rem">Abriremos seu aplicativo de e-mail para enviar a mensagem.</div>
-  `;
-  pushMsg(box);
-  box.querySelector('#contato_cancelar')?.addEventListener('click', ()=>{
-    const msg = document.createElement('div'); msg.className='msg recep';
-    msg.textContent='Tudo bem. Caso precise, a recepção está aqui para ajudar.'; pushMsg(msg);
-  });
-  box.querySelector('#contato_enviar')?.addEventListener('click', ()=>{
-    const txt = box.querySelector('#contato_txt').value.trim();
-    const assunto = encodeURIComponent('Contato – Queimadas Telemedicina');
-    const corpo = encodeURIComponent(`Paciente: ${nome||'(não informado)'}\nCPF: ${cpf||'(não informado)'}\n\nMensagem:\n${txt||'(vazio)'}\n`);
-    const url = `mailto:${emailDestino}?subject=${assunto}&body=${corpo}`; window.location.href = url;
-  });
-}
-
-async function startConsulta(){
-  await typeMessage('Vamos iniciar sua consulta.');
+// Welcome + load especialidades
+(async ()=>{
+  await typeMessage('Bem-vindo(a) à Queimadas Telemedicina!');
   await typeMessage('Escolha abaixo a especialidade para direcionarmos você ao médico adequado.');
+  // carrega lista
   const data = await fetch('especialidades.json').then(r=>r.json()).catch(()=>[]);
   lista.innerHTML = '';
   for(const item of data){
@@ -170,38 +65,53 @@ async function startConsulta(){
     lista.appendChild(b);
   }
   boxEsp.style.display='block';
-}
-
-(async ()=>{
-  await typeMessage('Bem-vindo(a) à Queimadas Telemedicina!');
-  const mode = await askMode();
-  if(mode==='consulta'){ await startConsulta(); }
-  else if(mode==='historico'){ await showHistorico(); }
-  else if(mode==='contato'){ await showContato(); }
 })();
 
 async function selectSpecialty(nome){
   boxEsp.style.display='none';
   localStorage.setItem('selectedSpecialty', nome);
-  await typeMessage('Especialidade escolhida: '+nome+'.', 'eu', 300);
+  await typeMessage('Especialidade escolhida: '+nome+'.', 'eu', 500);
   pre.style.display='block';
-  pre.textContent = 'Certo. Vou encaminhar você para o médico de '+nome+'. Tempo estimado: calculando…';
-  const minutos = Math.floor(Math.random()*5)+1;
-  let t=minutos*60;
+  pre.textContent = 'Certo. Vou encaminhar você para o médico de '+nome+'. Tempo estimado: _calculando…';
+  const minutos = Math.floor(Math.random()*5)+1; // 1–5
+  const total = minutos*60;
+  let t=total;
   pre.innerHTML = 'Certo. Vou encaminhar você para o médico de <b>'+nome+'</b>. Tempo estimado: <b>'+minutos+' min</b>.';
   aguarde.style.display='block';
   const timer = document.createElement('div');
   timer.innerHTML = '<span class="badge">Aguardando atendimento: <span id="count">--:--</span></span>';
-  aguarde.innerHTML=''; aguarde.appendChild(timer);
+  aguarde.innerHTML='';
+  aguarde.appendChild(timer);
   const span = timer.querySelector('#count');
-  const it = setInterval(()=>{
-    t--; if(t<0){ clearInterval(it); conectar(); return; }
-    const mm = Math.floor(t/60).toString().padStart(2,'0');
-    const ss = (t%60).toString().padStart(2,'0');
-    span.textContent = mm+':'+ss;
+  const iv = setInterval(()=>{
+     const mm = String(Math.floor(t/60)).padStart(1,'0');
+     const ss = String(t%60).padStart(2,'0');
+     span.textContent = mm+':'+ss;
+     if(--t<0){ clearInterval(iv); conectar(); }
   },1000);
+  // sinaliza fluxo válido
+  localStorage.setItem('triageComplete','1');
 }
-function conectar(){ location.href = 'paciente.html'; }
+
+function conectar(){
+  // vai primeiro para a ponte que cria a sessão e redireciona
+  location.href = 'paciente.html';
+}
+// Override de tempos de digitação para Recepção
+function __calcTypingTimeFor(texto){
+  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 8;
+  return Math.max(6900, Math.round(words * 2300)); // 1 palavra a cada ~2.3s
+}
+function __calcThinkingTime(){
+  return Math.floor(15000 + Math.random()*15000); // 15–30s
+}
+async function recepcaoPensandoEDigitando(texto){
+  if (typeof delay !== 'function'){ window.delay = (ms)=>new Promise(r=>setTimeout(r,ms)); }
+  if (typeof status === 'function'){ status("Recepção pensando…"); }
+  await delay(__calcThinkingTime());
+  if (typeof status === 'function'){ status("Recepção digitando…"); }
+  await delay(__calcTypingTimeFor(texto));
+}
 </script>
 </body>
 </html>
