@@ -13,18 +13,11 @@
     label{display:block;font-weight:600;margin:6px 0}
     input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
     button{padding:10px 16px;border:1px solid #0f172a;background:#0f172a;color:#fff;border-radius:8px;cursor:pointer}
-    .btn-ghost{background:transparent;color:#0f172a;border-color:transparent;text-decoration:underline}
     .muted{font-size:.9rem;color:#475569}
-    .msg{margin-top:8px;font-size:.95rem}
-    .msg.error{color:#b91c1c}
-    .msg.ok{color:#0f5132}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-    header img{height:70px;border-radius:8px}
-    .atende{display:flex;justify-content:center;margin-top:16px}
-    .atende img{height:40px;opacity:.9}
-    .statusbar{max-width:900px;margin:0 auto 8px auto;padding:6px 10px;border-radius:8px;font-size:.9rem}
-    .status-ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
-    .status-bad{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    .link{color:#0f172a;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0}
+    .msg{margin-top:8px;color:#b91c1c}
+    h2{margin:8px 0 12px}
+    .hidden{display:none}
   </style>
 </head>
 <body>
@@ -32,9 +25,6 @@
   <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
   <h1>Queimadas Telemedicina</h1>
 </header>
-
-<!-- Barra de status do backend -->
-<div id="net_status" class="statusbar status-bad" style="display:none"></div>
 
 <main>
   <div class="shell">
@@ -47,45 +37,12 @@
         <input id="login_pwd" type="password" placeholder="Sua senha" autocomplete="current-password">
         <label>E-mail (recuperação)</label>
         <input id="login_email" type="email" placeholder="Seu e-mail (opcional)" autocomplete="email">
-        <button id="btn_login" type="button">Entrar</button>
-        <button id="btn_forgot" type="button" class="btn-ghost">Esqueceu a senha?</button>
+        <button id="btn_login">Entrar</button>
+        <button id="btn_forgot" class="link">Esqueceu a senha?</button>
         <div id="login_msg" class="msg"></div>
-
-        <!-- Recuperar senha -->
-        <div id="forgot_panel" class="card" style="display:none;margin-top:12px;border:1px solid #e5e7eb;border-radius:10px;padding:10px">
-          <h3 style="margin:0 0 6px 0;font-size:1rem">Recuperar senha</h3>
-
-          <label>E-mail cadastrado</label>
-          <input id="forgot_email" type="email" placeholder="seu@email.com" autocomplete="email">
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="btn_send_reset" type="button">Enviar e-mail</button>
-            <button id="btn_cancel_reset" type="button" class="btn-ghost">Cancelar</button>
-          </div>
-
-          <hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb">
-
-          <label>Código recebido por e-mail</label>
-          <input id="reset_code" type="text" placeholder="Ex.: A1B2C3">
-          <label>Nova senha</label>
-          <input id="reset_newpwd" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="btn_apply_reset" type="button">Redefinir senha</button>
-          </div>
-
-          <div id="forgot_msg" class="msg"></div>
-          <p class="muted">Você receberá um e-mail com instruções/código. Depois, informe o código acima e escolha a nova senha.</p>
-        </div>
+        <p class="muted">Usuário de teste: CPF 12345678909 — senha: Teste@123 — e-mail: teste@exemplo.com</p>
       </div>
-
-      <!-- CTA do cadastro -->
-      <div class="col" id="register_cta">
-        <h2>Cadastro</h2>
-        <p class="muted">Ainda não tem conta?</p>
-        <button id="btn_show_register" type="button">Cadastre</button>
-      </div>
-
-      <!-- Formulário de cadastro (oculto) -->
-      <div class="col" id="register_panel" style="display:none">
+      <div class="col">
         <h2>Criar conta</h2>
         <label>Nome completo</label>
         <input id="reg_nome" type="text" placeholder="Como está no documento">
@@ -95,7 +52,7 @@
         <input id="reg_email" type="email" placeholder="seu@email.com" autocomplete="email">
         <label>Senha</label>
         <input id="reg_pwd" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
-        <button id="btn_register" type="button">Cadastrar</button>
+        <button id="btn_register">Cadastrar</button>
         <div id="reg_msg" class="msg"></div>
       </div>
     </div>
@@ -104,145 +61,83 @@
 </main>
 
 <script>
-const API_BASE = 'https://remedy-queimadas-api.onrender.com';
+const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-api.onrender.com');
 
-function onlyDigits(s){return (s||'').replace(/\\D+/g,'');}
-function setMsg(el, text, ok=false){ el.className='msg '+(ok?'ok':'error'); el.textContent=text; }
+function onlyDigits(s){ return String(s||'').replace(/\D/g,''); }
 
-// Status do backend
-(async function checkBackend(){
-  const bar = document.getElementById('net_status');
-  try{
-    const t = setTimeout(()=>{ throw new Error('timeout'); }, 6000);
-    const r = await fetch(API_BASE + '/health', { cache:'no-store' });
-    clearTimeout(t);
-    if(r.ok){
-      bar.className='statusbar status-ok';
-      bar.textContent='Conectado ao servidor ✓';
-    }else{
-      bar.className='statusbar status-bad';
-      bar.textContent='Servidor respondeu com erro ('+r.status+').';
-    }
-  }catch(e){
-    bar.className='statusbar status-bad';
-    bar.textContent='Servidor indisponível. Tente novamente em instantes.';
-  }
-  bar.style.display='block';
-})();
+async function call(path, opt={}){
+  const res = await fetch(API_BASE + path, { ...opt, headers:{ 'Content-Type':'application/json', ...(opt.headers||{}) } });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error||'Falha');
+  return data;
+}
 
-// Tratadores globais de erro (mostra algo visível)
-window.addEventListener('error', e=>{
-  const m = document.getElementById('login_msg');
-  if(m) setMsg(m, 'Erro no aplicativo: '+(e.error?.message||e.message||'desconhecido'));
-});
-window.addEventListener('unhandledrejection', e=>{
-  const m = document.getElementById('login_msg');
-  if(m) setMsg(m, 'Falha inesperada: '+(e.reason?.message||e.reason||''));
-});
-
-// Login paciente
-document.getElementById('btn_login').addEventListener('click', async ()=>{
+document.getElementById('btn_login').onclick = async ()=>{
   const cpf = onlyDigits(document.getElementById('login_cpf').value);
   const password = document.getElementById('login_pwd').value;
   const email = document.getElementById('login_email').value.trim();
   const msg = document.getElementById('login_msg');
-  msg.textContent = ''; msg.className='msg';
-
-  if(!cpf && !email){ setMsg(msg,'Informe CPF ou e-mail.'); return; }
-  if(!password){ setMsg(msg,'Informe sua senha.'); return; }
-
+  msg.textContent='';
   try{
-    const body = cpf ? { cpf, password } : { email, password };
-    const r = await fetch(API_BASE + '/auth/patient/login', {
-      method:'POST',
-      headers:{ 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if(!r.ok){
-      let t=''; try{ const j=await r.json(); t=j.message||''; }catch(_){}
-      throw new Error(t || ('HTTP '+r.status));
-    }
-    const data = await r.json();
-    localStorage.setItem('token', data.token || '');
-    location.href = 'paciente.html';
+    const r = await call('/auth/patient/login', { method:'POST', body: JSON.stringify({ cpf, password }) });
+    // Salva sessão simples do paciente para uso nas telas seguintes
+    localStorage.setItem('patient_token', r.token);
+    localStorage.setItem('pacienteCPF', r.cpf);
+    localStorage.setItem('pacienteNome', r.nome||'');
+    localStorage.setItem('pacienteEmail', r.email||email||'');
+    // Protege fluxo da recepção já existente
+    localStorage.setItem('triageComplete','0');
+    location.replace('receptionist.html');
   }catch(e){
-    setMsg(msg, 'Falha ao entrar: '+(e.message||'verifique seus dados'));
+    msg.textContent = 'CPF ou senha inválidos.';
   }
-});
+};
 
-// Esqueci a senha
-(function(){
-  const btnForgot = document.getElementById('btn_forgot');
-  const panel = document.getElementById('forgot_panel');
-  const emailInput = document.getElementById('forgot_email');
-  const msg = document.getElementById('forgot_msg');
-  const btnSend = document.getElementById('btn_send_reset');
-  const btnCancel = document.getElementById('btn_cancel_reset');
-  const code = document.getElementById('reset_code');
-  const newPwd = document.getElementById('reset_newpwd');
-
-  btnForgot.addEventListener('click', ()=>{ panel.style.display='block'; msg.textContent=''; emailInput?.focus(); });
-  btnCancel.addEventListener('click', ()=>{ panel.style.display='none'; msg.textContent=''; });
-
-  btnSend.addEventListener('click', async ()=>{
-    const email = (emailInput?.value||'').trim();
-    msg.className='msg'; msg.textContent='';
-    if(!email){ setMsg(msg,'Informe seu e-mail cadastrado.'); return; }
+document.getElementById('btn_forgot').onclick = async ()=>{
+  const cpf = onlyDigits(document.getElementById('login_cpf').value);
+  const email = document.getElementById('login_email').value.trim();
+  const msg = document.getElementById('login_msg');
+  msg.textContent='';
+  try{
+    const r = await call('/auth/patient/forgot', { method:'POST', body: JSON.stringify({ cpfOrEmail: cpf || email }) });
+    msg.textContent = 'Enviamos instruções para o seu e-mail. Código (para testes): ' + (r.code||'(verifique seu e-mail)');
     try{
-      const r = await fetch(API_BASE + '/auth/patient/forgot', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ cpfOrEmail: email })
-      });
-      if(!r.ok) throw new Error('Falha ao iniciar recuperação');
-      setMsg(msg,'Pronto! Enviamos instruções para o seu e-mail.', true);
-    }catch(e){ setMsg(msg,'Não foi possível iniciar a recuperação. Verifique o e-mail informado.'); }
-  });
+      const code = prompt('Informe o código recebido por e-mail:');
+      if(code){
+        const newPass = prompt('Digite a nova senha:');
+        if(newPass && newPass.length>=8){
+          await call('/auth/patient/reset', { method:'POST', body: JSON.stringify({ code, newPassword: newPass }) });
+          msg.style.color = '#0f5132';
+          msg.textContent = 'Senha redefinida com sucesso. Agora faça login.';
+        } else {
+          msg.textContent = 'Senha não alterada. Informe ao menos 8 caracteres.';
+        }
+      }
+    }catch(_e){ msg.textContent = 'Não foi possível redefinir a senha.'; }
+  }catch(_e){
+    msg.textContent = 'Não foi possível iniciar a recuperação.';
+  }
+};
 
-  document.getElementById('btn_apply_reset').addEventListener('click', async ()=>{
-    const c = (code?.value||'').trim();
-    const p = (newPwd?.value||'');
-    msg.className='msg'; msg.textContent='';
-    if(!(c && p && p.length>=8)){ setMsg(msg,'Informe o código e uma nova senha (mín. 8).'); return; }
-    try{
-      const r = await fetch(API_BASE + '/auth/patient/reset', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code:c, newPassword:p })
-      });
-      if(!r.ok) throw new Error('Falha na redefinição');
-      setMsg(msg,'Senha alterada. Agora faça login.', true);
-      panel.style.display='none';
-    }catch(e){ setMsg(msg,'Não foi possível redefinir a senha.'); }
-  });
-})();
-
-// Cadastro
-document.getElementById('btn_show_register').addEventListener('click', ()=>{
-  document.getElementById('register_cta').style.display='none';
-  document.getElementById('register_panel').style.display='block';
-  document.getElementById('reg_nome')?.focus();
-});
-document.getElementById('btn_register').addEventListener('click', async ()=>{
+document.getElementById('btn_register').onclick = async ()=>{
   const nome = document.getElementById('reg_nome').value.trim();
   const cpf = onlyDigits(document.getElementById('reg_cpf').value);
   const email = document.getElementById('reg_email').value.trim();
   const password = document.getElementById('reg_pwd').value;
   const msg = document.getElementById('reg_msg');
-  msg.className='msg'; msg.textContent='';
-
-  const cpfOk = cpf && cpf.length===11;
-  const emailOk = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
-  const passOk = password && password.length>=8 && /[A-Za-z]/.test(password) && /\\d/.test(password);
-
-  if(!(nome && cpfOk && emailOk && passOk)){ setMsg(msg,'Preencha corretamente nome, CPF (11 dígitos), e-mail e senha (mín. 8).'); return; }
-
+  msg.textContent='';
+  if(!nome || cpf.length!==11 || !email || (password||'').length<8){
+    msg.textContent = 'Preencha corretamente nome, CPF (11 dígitos), e-mail e senha (mín. 8).';
+    return;
+  }
   try{
-    const r = await fetch(API_BASE + '/auth/patient/register', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome, cpf, email, password })
-    });
-    if(!r.ok){ let t=''; try{ const j=await r.json(); t=j.message||''; }catch(_){}
-      throw new Error(t || ('HTTP '+r.status));
-    }
-    setMsg(msg,'Cadastro concluído. Você já pode entrar.', true);
-  }catch(e){ setMsg(msg, 'Erro no cadastro: '+(e.message||'verifique os dados')); }
-});
+    await call('/auth/patient/register', { method:'POST', body: JSON.stringify({ nome, cpf, email, password }) });
+    msg.style.color = '#0f5132';
+    msg.textContent = 'Cadastro concluído. Você já pode entrar.';
+  }catch(e){
+    msg.textContent = 'Erro no cadastro: ' + (e.message||'verifique os dados');
+  }
+};
 </script>
 </body>
 </html>
