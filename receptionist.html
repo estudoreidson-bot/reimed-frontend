@@ -14,7 +14,8 @@
 
   <main>
     <div id="chat" class="chat" aria-live="polite">
-            <div id="especialidades" class="msg recep" style="display:none">
+      <div class="msg recep" id="welcome">Recepção está digitando…</div>
+      <div id="especialidades" class="msg recep" style="display:none">
         <div><strong>Selecione a especialidade para direcionarmos ao médico:</strong></div>
         <div id="lista-esp"></div>
       </div>
@@ -30,8 +31,11 @@
     </div>
   </main>
 
-<script>
-try{ document.getElementById('welcome')?.remove(); }catch(e){}
+<script type="module">
+import { requireAuth, api } from "./auth.js";
+requireAuth();
+
+import { containsForbiddenIA, STD_REPLY } from "./policy.js";
 const chat = document.getElementById('chat');
 const boxEsp = document.getElementById('especialidades');
 const lista = document.getElementById('lista-esp');
@@ -52,6 +56,8 @@ function typeMessage(text, klass="recep", min=10000){
 
 // Welcome + load especialidades
 (async ()=>{
+  try{ const d = await api('/auth/me'); localStorage.setItem('pacienteNome', d.user?.name||''); localStorage.setItem('pacienteCPF', d.user?.cpf||''); }catch(e){}
+
   await typeMessage('Bem-vindo(a) à Queimadas Telemedicina!');
   await typeMessage('Escolha abaixo a especialidade para direcionarmos você ao médico adequado.');
   // carrega lista
@@ -115,3 +121,16 @@ async function recepcaoPensandoEDigitando(texto){
 </script>
 </body>
 </html>
+
+<script type="module">
+document.addEventListener("keydown", (e)=>{
+  const el = e.target;
+  if((el.tagName==="INPUT" || el.tagName==="TEXTAREA") && e.key==="Enter"){
+    const v = (el.value||"").trim();
+    if(containsForbiddenIA(v)){
+      e.preventDefault();
+      alert(STD_REPLY);
+    }
+  }
+});
+</script>

@@ -1,0 +1,36 @@
+<!doctype html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Criar conta – Queimadas Telemedicina</title>
+<link rel="stylesheet" href="style.css"><style>
+.form{ max-width:440px; margin:20px auto; background:#fff; border:1px solid #e6ebf5; padding:16px; border-radius:12px; }
+.form h2{ margin:0 0 10px; }
+.form label{ display:block; margin:10px 0 4px; font-weight:600; }
+.form input{ width:100%; padding:12px 14px; border:1px solid #cfd8ea; border-radius:10px; font-size:16px; }
+.form button{ margin-top:12px; background:#0e8240; color:#fff; border:none; padding:12px 16px; border-radius:10px; font-weight:700; width:100%; }
+.form .alt{ margin-top:10px; text-align:center; }
+</style>
+</head><body>
+<header><img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas"><h1>Queimadas Telemedicina</h1></header>
+<main>
+  <form class="form" id="f">
+    <h2>Criar conta</h2>
+    <label>Nome completo</label><input id="name" autocomplete="name">
+    <label>CPF</label><input id="cpf" autocomplete="off" maxlength="14">
+    <label>E-mail</label><input id="email" type="email" autocomplete="email">
+    <label>Senha</label><input id="pw" type="password" autocomplete="new-password">
+    <button type="submit">Cadastrar</button>
+    <div class="alt"><a href="login.html">Já tenho conta</a></div>
+  </form>
+</main>
+<script type="module">
+import { api, setToken } from './auth.js';
+document.getElementById('f').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name=document.getElementById('name').value.trim();
+  const cpf=document.getElementById('cpf').value.trim();
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('pw').value;
+  const d = await api('/auth/register','POST',{ name, cpf, email, password });
+  if(d.ok && d.token){ setToken(d.token); location.replace('receptionist.html'); } else alert(d.error||'Falha no cadastro');
+});
+</script></body></html>

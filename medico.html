@@ -70,10 +70,10 @@
     <img class="logo-rodape" src="atende-mais.png" alt="Atende Mais" />
   </main>
 
-  <script>
+  <script type="module">
     // ====== Config ======
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
-    const ESPECIALIDADE = (localStorage.getItem("selectedSpecialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
+    const ESPECIALIDADE = new URLSearchParams(location.search).get("especialidade") || "Clínico Geral";
 
     // ====== Estado ======
     const chat = document.getElementById("chat");
@@ -98,7 +98,7 @@
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
-            headers:{ "Content-Type":"application/json" },
+            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token() },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
           }).catch(()=>{});
         }
@@ -119,7 +119,7 @@
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
-            headers:{ "Content-Type":"application/json" },
+            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token() },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
           }).catch(()=>{});
         }
@@ -138,8 +138,8 @@
   const pensar = Math.floor(pensarMin + Math.random()*(pensarMax - pensarMin));
   status("Médico pensando…");
   await delay(pensar);
-  const typePerWord = 1700;
-  const digitar = Math.max(3400, Math.round(words * typePerWord));
+  const typePerWord = 2300;
+  const digitar = Math.max(6900, Math.round(words * typePerWord));
   status("Médico digitando…");
   await delay(digitar);
 }
@@ -160,13 +160,13 @@
       };
       const resp = await fetch(`${API_BASE}/api/medico/chat`, {
         method:"POST",
-        headers:{ "Content-Type":"application/json" },
+        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token() },
         body: JSON.stringify(body)
       });
-      if(!resp.ok) throw new Error("Falha ao contatar IA");
+      if(!resp.ok) throw new Error("Falha ao contatar o servidor");
       const data = await resp.json();
-      if(!data.ok) throw new Error("IA indisponível");
-      return data.reply;
+      if(!data.ok) throw new Error("Serviço indisponível no momento");
+      return sanitizeOutgoing(data.reply);
     }
 
     async function enviarTexto(){
@@ -176,10 +176,18 @@
       addMsg("user", txt);
       input.value = "";
       try{
+        if(containsForbiddenIA(txt)){
+          await pensandoEDigitando(STD_REPLY);
+          historico.push({ role:"assistant", content: STD_REPLY });
+          addMsg("assistant", STD_REPLY);
+          return;
+        }
+
         const resposta = await chamarIA();
         await pensandoEDigitando(resposta);
         historico.push({ role:"assistant", content: resposta });
         addMsg("assistant", resposta);
+        try{ await api("/api/history/save","POST",{ specialty: ESPECIALIDADE, conteudo: resposta }); }catch(e){}
       }catch(e){
         addMsg("assistant", "Não consegui contato com o servidor agora. Vamos tentar novamente em alguns segundos. Se persistir, volte para a recepção.");
         console.error(e);
@@ -197,6 +205,7 @@
         await pensandoEDigitando(resposta);
         historico.push({ role:"assistant", content: resposta });
         addMsg("assistant", resposta);
+        try{ await api("/api/history/save","POST",{ specialty: ESPECIALIDADE, conteudo: resposta }); }catch(e){}
       }catch(e){
         addMsg("assistant", "Parece que houve um problema no contato com o servidor. Poderia tentar novamente?");
       }finally{
@@ -210,6 +219,11 @@
     });
 
     // Fluxo inicial
+    import { containsForbiddenIA, sanitizeOutgoing, STD_REPLY } from "./policy.js";
+
+    import { requireAuth, api, token } from "./auth.js";
+requireAuth();
+
     (async () => {
       // banner inicial
       const saud = "Olá, sou o Médico de " + ESPECIALIDADE + ". Vou dar continuidade ao seu atendimento.";

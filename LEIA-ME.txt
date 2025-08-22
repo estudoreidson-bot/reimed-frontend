@@ -27,3 +27,6 @@ Passos básicos:
      // Exemplo de uso dos delays
      const {thinkMs, typeMs} = humanDelays(120,'medico');
    </script>
+
+
+Política de comunicação: front e backend com bloqueio automático de menções a IA/robôs e resposta padrão de médico. Rascunhos de receitas nunca são enviados ao paciente e ficam pendentes no painel administrativo.
