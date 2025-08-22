@@ -70,10 +70,10 @@
     <img class="logo-rodape" src="atende-mais.png" alt="Atende Mais" />
   </main>
 
-  <script type="module">
+  <script>
     // ====== Config ======
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
-    const ESPECIALIDADE = new URLSearchParams(location.search).get("especialidade") || "Clínico Geral";
+    const ESPECIALIDADE = (localStorage.getItem("selectedSpecialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
 
     // ====== Estado ======
     const chat = document.getElementById("chat");
@@ -138,8 +138,8 @@
   const pensar = Math.floor(pensarMin + Math.random()*(pensarMax - pensarMin));
   status("Médico pensando…");
   await delay(pensar);
-  const typePerWord = 2300;
-  const digitar = Math.max(6900, Math.round(words * typePerWord));
+  const typePerWord = 1700;
+  const digitar = Math.max(3400, Math.round(words * typePerWord));
   status("Médico digitando…");
   await delay(digitar);
 }
@@ -163,10 +163,10 @@
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify(body)
       });
-      if(!resp.ok) throw new Error("Falha ao contatar o servidor");
+      if(!resp.ok) throw new Error("Falha ao contatar IA");
       const data = await resp.json();
-      if(!data.ok) throw new Error("Serviço indisponível no momento");
-      return sanitizeOutgoing(data.reply);
+      if(!data.ok) throw new Error("IA indisponível");
+      return data.reply;
     }
 
     async function enviarTexto(){
@@ -176,13 +176,6 @@
       addMsg("user", txt);
       input.value = "";
       try{
-        if(containsForbiddenIA(txt)){
-          await pensandoEDigitando(STD_REPLY);
-          historico.push({ role:"assistant", content: STD_REPLY });
-          addMsg("assistant", STD_REPLY);
-          return;
-        }
-
         const resposta = await chamarIA();
         await pensandoEDigitando(resposta);
         historico.push({ role:"assistant", content: resposta });
@@ -217,8 +210,6 @@
     });
 
     // Fluxo inicial
-    import { containsForbiddenIA, sanitizeOutgoing, STD_REPLY } from "./policy.js";
-
     (async () => {
       // banner inicial
       const saud = "Olá, sou o Médico de " + ESPECIALIDADE + ". Vou dar continuidade ao seu atendimento.";

@@ -14,8 +14,7 @@
 
   <main>
     <div id="chat" class="chat" aria-live="polite">
-      <div class="msg recep" id="welcome">Recepção está digitando…</div>
-      <div id="especialidades" class="msg recep" style="display:none">
+            <div id="especialidades" class="msg recep" style="display:none">
         <div><strong>Selecione a especialidade para direcionarmos ao médico:</strong></div>
         <div id="lista-esp"></div>
       </div>
@@ -31,8 +30,8 @@
     </div>
   </main>
 
-<script type="module">
-import { containsForbiddenIA, STD_REPLY } from "./policy.js";
+<script>
+try{ document.getElementById('welcome')?.remove(); }catch(e){}
 const chat = document.getElementById('chat');
 const boxEsp = document.getElementById('especialidades');
 const lista = document.getElementById('lista-esp');
@@ -116,16 +115,3 @@ async function recepcaoPensandoEDigitando(texto){
 </script>
 </body>
 </html>
-
-<script type="module">
-document.addEventListener("keydown", (e)=>{
-  const el = e.target;
-  if((el.tagName==="INPUT" || el.tagName==="TEXTAREA") && e.key==="Enter"){
-    const v = (el.value||"").trim();
-    if(containsForbiddenIA(v)){
-      e.preventDefault();
-      alert(STD_REPLY);
-    }
-  }
-});
-</script>

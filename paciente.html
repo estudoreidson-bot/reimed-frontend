@@ -28,10 +28,10 @@ const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-ap
     body:JSON.stringify({specialty})
   }).then(r=>r.json()).then(d=>{
     localStorage.setItem('sessionId', d.sessionId||'');
-    location.replace('medico.html');
+    location.replace('medico.html?especialidade=' + encodeURIComponent(specialty));
   }).catch(()=>{
     // mesmo que a API caia, segue para a sala (o médico vai avisar erro)
-    location.replace('medico.html');
+    location.replace('medico.html?especialidade=' + encodeURIComponent(specialty));
   });
 })();
 </script>
