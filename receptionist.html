@@ -31,7 +31,8 @@
     </div>
   </main>
 
-<script>
+<script type="module">
+import { containsForbiddenIA, STD_REPLY } from "./policy.js";
 const chat = document.getElementById('chat');
 const boxEsp = document.getElementById('especialidades');
 const lista = document.getElementById('lista-esp');
@@ -115,3 +116,16 @@ async function recepcaoPensandoEDigitando(texto){
 </script>
 </body>
 </html>
+
+<script type="module">
+document.addEventListener("keydown", (e)=>{
+  const el = e.target;
+  if((el.tagName==="INPUT" || el.tagName==="TEXTAREA") && e.key==="Enter"){
+    const v = (el.value||"").trim();
+    if(containsForbiddenIA(v)){
+      e.preventDefault();
+      alert(STD_REPLY);
+    }
+  }
+});
+</script>

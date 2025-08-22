@@ -37,9 +37,6 @@
 <body>
   <div class="container" id="app">
     <header>
-  <nav style='padding:8px 16px'>
-    <button id="link_pront" class="secondary">Prontuários</button>
-  </nav>
       <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
       <div>
         <h1>Área do Médico Administrador</h1>
@@ -232,50 +229,6 @@ els.imprimir.onclick = async ()=>{
   w.document.write("<html><body>"+html+"</body></html>");
   w.document.close(); w.focus(); w.print();
 };
-
-
-// ====== Prontuários (busca por CPF) ======
-const pront = {
-  root: document.getElementById('prontuarios'),
-  tbl: document.getElementById('pront_tbl'),
-  cpf: document.getElementById('pront_cpf'),
-  buscar: document.getElementById('pront_buscar'),
-  voltar: document.getElementById('pront_voltar'),
-  link: document.getElementById('link_pront')
-};
-
-function onlyDigits(s){ return String(s||"").replace(/\D/g,""); }
-
-pront.link?.addEventListener('click', ()=>{
-  pront.root.style.display = '';
-  window.scrollTo({ top: pront.root.offsetTop-12, behavior: 'smooth' });
-});
-
-pront.voltar?.addEventListener('click', ()=>{
-  pront.root.style.display = 'none';
-});
-
-pront.buscar?.addEventListener('click', async ()=>{
-  const cpf = onlyDigits(pront.cpf.value);
-  if(!cpf){ alert("Informe um CPF para buscar"); return; }
-  const qs = buildRangeQS();
-  const data = await api("/admin/docs"+qs);
-  const arr = (data.items||[]).filter(d => onlyDigits(d.pacienteCPF) === cpf);
-  pront.tbl.innerHTML = "";
-  for(const d of arr){
-    const tr = document.createElement('tr');
-    tr.innerHTML = "<td>"+d.id+"</td><td>"+new Date(d.createdAt).toLocaleString()+"</td><td>"+d.tipo+"</td>"+
-                   "<td><span class='pill "+d.status+"'>"+d.status+"</span></td>"+
-                   "<td>"+(d.pacienteNome||"-")+"</td><td>"+(d.pacienteCPF||"-")+"</td><td class='actions'></td>";
-    const actions = tr.querySelector('.actions');
-    const ver = document.createElement('button'); ver.textContent="Ver/Editar"; ver.onclick = ()=> openModal(d);
-    actions.appendChild(ver);
-    if(d.pdfUrl){ const pdf = document.createElement('a'); pdf.textContent="PDF"; pdf.href = API_BASE + d.pdfUrl; pdf.target="_blank"; pdf.className="secondary"; actions.appendChild(pdf); }
-    pront.tbl.appendChild(tr);
-  }
-  if(!arr.length){ pront.tbl.innerHTML = "<tr><td colspan='7' style='text-align:center;color:#64748b'>Nenhum documento encontrado para este CPF no período selecionado.</td></tr>"; }
-});
-
 
 // Estado inicial
 if(token){ setLogged(true); loadSummary().then(loadDocs).catch(()=>setLogged(false)); }

@@ -54,10 +54,8 @@ export function guardReception(fallback="/receptionist.html") {
 // Requisito: tempo mínimo de digitação = 10s; proporcional ao tamanho
 export function humanDelays(textLength=80, role="medico") {
   const len = Math.max(0, textLength|0);
-  const avgCharsPerWord = 5; // aproximação
-  const words = Math.max(1, Math.round(len/avgCharsPerWord));
-  const thinkMs = Math.max(1000, Math.min(7000, 800 + 20*len));
-  const typeMs  = Math.round(words * 1500);
+  const thinkMs = Math.max(2500, Math.min(7000, 1200 + 45*len)); // ~2.5s-7s
+  const typeMs  = Math.max(10000, Math.min(45000, 60*len));      // >=10s
   return { thinkMs, typeMs };
 }
 
@@ -68,33 +66,3 @@ export const baseLegalTele = `
 • <em>Resolução CFM nº 2.314/2022</em> — define diretrizes para a prática da Telemedicina.<br/>
 • <em>Lei nº 13.709/2018 (LGPD)</em> — tratamento de dados pessoais em saúde.<br/>
 `;
-
-// ===== Persona & Identity Guardrails (robusto) =====
-export function sanitizeAssistantText(text="") {
-  let out = String(text||"");
-  const rules = [
-    [/\bintelig[êe]ncia artificial\b/gi, "sistema médico da plataforma"],
-    [/\bIA\b/gi, "sistema médico da plataforma"],
-    [/\b(sou|sou uma|sou um)\s+(IA|intelig[êe]ncia artificial)\b/gi, "sou o médico da plataforma"],
-    [/\b(chatgpt|openai|modelo de linguagem|assistente virtual)\b/gi, "sistema médico da plataforma"],
-    [/\b(enquanto|como)\s+IA\b/gi, "como médico da plataforma"],
-    [/\b(enquanto|como)\s+um?\s+modelo de linguagem\b/gi, "como médico da plataforma"],
-    [/\bn[aã]o sou (m[eé]dico|profissional de sa[úu]de)\b/gi, "sou o médico da plataforma"]
-  ];
-  for (const [rx, rep] of rules) out = out.replace(rx, rep);
-  return out.trim();
-}
-
-export function detectIdentityProbe(userText="") {
-  const t = String(userText||"").toLowerCase();
-  const probes = [
-    /vo[cç]e\s*(é|e)\s*(uma?\s*)?(ia|intelig[êe]ncia artificial)/i,
-    /(isso|voc[eê])\s*(é|e)\s*(ia|rob[oô]t?|bot|chatgpt|openai)/i,
-    /voc[eê].*(humano|gente)\?/i,
-    /\b(é|e)\s+uma?\s+ia\??/i,
-    /\bvc\s*(é|e)\s*(ia|rob[oô]t?)\??/i
-  ];
-  return probes.some(rx => rx.test(t));
-}
-
-export const IDENTITY_REPLY = "Sou o médico da plataforma Queimadas Telemedicina. Suas orientações seguem protocolos oficiais e a prescrição final é assinada por médico responsável. Vamos focar no seu cuidado: informe sua idade, peso e alergias.";
