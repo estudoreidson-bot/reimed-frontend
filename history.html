@@ -19,39 +19,25 @@ h2{margin:8px 0 16px}
   <div class="topbar">
     <h2>Meu histórico</h2>
     <a href="receptionist.html">Nova consulta</a>
+    <a href="#" id="btnLogoutPatient" class="small">Sair</a>
   </div>
   <div id="list"></div>
 </main>
-<script type="module">
-import { requireAuth, api } from './auth.js';
-requireAuth();
-const list = document.getElementById('list');
-async function load(){
-  const d = await api('/api/history','GET');
-  if(!d.ok){ list.innerHTML = '<p>Não foi possível carregar seu histórico.</p>'; return; }
-  if(!d.items || d.items.length===0){ list.innerHTML = '<p>Seu histórico aparecerá aqui após os atendimentos.</p>'; return; }
-  list.innerHTML = d.items.map(it=>`
-    <div class="item">
-      <div class="meta"><span class="spec">${it.specialty||'Geral'}</span> • ${new Date(it.created_at||Date.now()).toLocaleString()}</div>
-      <pre>${(it.preview||'').replace(/[<>&]/g, s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</pre>
-    </div>
-  `).join('');
-}
-load();
-</script>
-
-<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
 
 <script type="module">
 try{
   const el = document.getElementById('lkHist');
-  if(el){
-    const mod = await import('./auth.js');
-    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
-      el.style.removeProperty('display');
-    }
-  }
+  const { isAuthed } = await import('./auth.js');
+  function update(){ if(!el) return; if(isAuthed()){ el.style.removeProperty('display'); } else { el.style.display='none'; } }
+  update();
+  window.addEventListener('auth-changed', update);
+  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN') update(); });
 }catch(_e){}
+
+import { logout } from './auth.js';
+const bl = document.getElementById('btnLogoutPatient');
+if(bl){ bl.addEventListener('click', (e)=>{ e.preventDefault(); logout(); location.replace('login.html'); }); }
 </script>
+
 
 </body></html>

@@ -22,28 +22,17 @@
     <div class="alt"><a href="register.html">Criar conta</a> • <a href="forgot.html">Esqueci minha senha</a></div>
   </form>
 </main>
-<script type="module">
-import { api, setToken } from './auth.js';
-document.getElementById('f').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const cpfOrEmail = document.getElementById('id').value.trim();
-  const password = document.getElementById('pw').value;
-  const d = await api('/auth/login','POST',{ cpfOrEmail, password });
-  if(d.ok && d.token){ setToken(d.token); location.replace('receptionist.html'); } else alert(d.error||'Falha no login');
-});
-</script>
-<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
 
 <script type="module">
 try{
   const el = document.getElementById('lkHist');
-  if(el){
-    const mod = await import('./auth.js');
-    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
-      el.style.removeProperty('display');
-    }
-  }
+  const { isAuthed } = await import('./auth.js');
+  function update(){ if(!el) return; if(isAuthed()){ el.style.removeProperty('display'); } else { el.style.display='none'; } }
+  update();
+  window.addEventListener('auth-changed', update);
+  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN') update(); });
 }catch(_e){}
 </script>
+
 
 </body></html>

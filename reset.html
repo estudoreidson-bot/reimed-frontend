@@ -21,29 +21,17 @@
     <div class="alt"><a href="login.html">Entrar</a></div>
   </form>
 </main>
-<script type="module">
-import { api } from './auth.js';
-const token = new URLSearchParams(location.search).get('token');
-if(!token){ alert('Token ausente'); location.replace('login.html'); }
-document.getElementById('f').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const password=document.getElementById('pw').value;
-  const d = await api('/auth/reset','POST',{ token, password });
-  if(d.ok){ alert('Senha alterada. Faça login.'); location.replace('login.html'); } else alert(d.error||'Falha na redefinição');
-});
-</script>
-<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
 
 <script type="module">
 try{
   const el = document.getElementById('lkHist');
-  if(el){
-    const mod = await import('./auth.js');
-    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
-      el.style.removeProperty('display');
-    }
-  }
+  const { isAuthed } = await import('./auth.js');
+  function update(){ if(!el) return; if(isAuthed()){ el.style.removeProperty('display'); } else { el.style.display='none'; } }
+  update();
+  window.addEventListener('auth-changed', update);
+  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN') update(); });
 }catch(_e){}
 </script>
+
 
 </body></html>

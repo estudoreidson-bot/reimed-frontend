@@ -33,108 +33,18 @@
     </div>
   </main>
 
-<script type="module">
-import { requireAuth, api } from "./auth.js";
-requireAuth();
-
-import { containsForbiddenIA, STD_REPLY } from "./policy.js";
-const chat = document.getElementById('chat');
-const boxEsp = document.getElementById('especialidades');
-const lista = document.getElementById('lista-esp');
-const pre = document.getElementById('pre-transfer');
-const aguarde = document.getElementById('aguarde');
-
-function pushMsg(el){ chat.appendChild(el); chat.scrollTop = chat.scrollHeight; }
-
-function typeMessage(text, klass="recep", min=10000){
-  const m = document.createElement('div');
-  m.className = 'msg '+klass;
-  const delay = Math.max(min, Math.min(20000, text.length*60)); // 60ms por caractere, min 10s
-  m.textContent = 'Recepção está digitando…';
-  pushMsg(m);
-  setTimeout(()=>{ m.textContent = text; }, delay);
-  return new Promise(res=>setTimeout(res, delay+200));
-}
-
-// Welcome + load especialidades
-(async ()=>{
-  try{ const d = await api('/auth/me'); localStorage.setItem('pacienteNome', d.user?.name||''); localStorage.setItem('pacienteCPF', d.user?.cpf||''); }catch(e){}
-
-  await typeMessage('Bem-vindo(a) à Queimadas Telemedicina!');
-  await typeMessage('Escolha abaixo a especialidade para direcionarmos você ao médico adequado.');
-  // carrega lista
-  const data = await fetch('especialidades.json').then(r=>r.json()).catch(()=>[]);
-  lista.innerHTML = '';
-  for(const item of data){
-    const b = document.createElement('button');
-    b.className='btn'; b.type='button';
-    b.innerHTML = '<strong>'+item.nome+'</strong><small>'+item.descricao+'</small>';
-    b.addEventListener('click', ()=> selectSpecialty(item.nome));
-    lista.appendChild(b);
-  }
-  boxEsp.style.display='block';
-})();
-
-async function selectSpecialty(nome){
-  boxEsp.style.display='none';
-  localStorage.setItem('selectedSpecialty', nome);
-  await typeMessage('Especialidade escolhida: '+nome+'.', 'eu', 500);
-  pre.style.display='block';
-  pre.textContent = 'Certo. Vou encaminhar você para o médico de '+nome+'. Tempo estimado: _calculando…';
-  const minutos = Math.floor(Math.random()*5)+1; // 1–5
-  const total = minutos*60;
-  let t=total;
-  pre.innerHTML = 'Certo. Vou encaminhar você para o médico de <b>'+nome+'</b>. Tempo estimado: <b>'+minutos+' min</b>.';
-  aguarde.style.display='block';
-  const timer = document.createElement('div');
-  timer.innerHTML = '<span class="badge">Aguardando atendimento: <span id="count">--:--</span></span>';
-  aguarde.innerHTML='';
-  aguarde.appendChild(timer);
-  const span = timer.querySelector('#count');
-  const iv = setInterval(()=>{
-     const mm = String(Math.floor(t/60)).padStart(1,'0');
-     const ss = String(t%60).padStart(2,'0');
-     span.textContent = mm+':'+ss;
-     if(--t<0){ clearInterval(iv); conectar(); }
-  },1000);
-  // sinaliza fluxo válido
-  localStorage.setItem('triageComplete','1');
-}
-
-function conectar(){
-  // vai primeiro para a ponte que cria a sessão e redireciona
-  location.href = 'paciente.html';
-}
-// Override de tempos de digitação para Recepção
-function __calcTypingTimeFor(texto){
-  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 8;
-  return Math.max(6900, Math.round(words * 2300)); // 1 palavra a cada ~2.3s
-}
-function __calcThinkingTime(){
-  return Math.floor(15000 + Math.random()*15000); // 15–30s
-}
-async function recepcaoPensandoEDigitando(texto){
-  if (typeof delay !== 'function'){ window.delay = (ms)=>new Promise(r=>setTimeout(r,ms)); }
-  if (typeof status === 'function'){ status("Recepção pensando…"); }
-  await delay(__calcThinkingTime());
-  if (typeof status === 'function'){ status("Recepção digitando…"); }
-  await delay(__calcTypingTimeFor(texto));
-}
-</script>
-
-<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
 
 <script type="module">
 try{
   const el = document.getElementById('lkHist');
-  if(el){
-    const mod = await import('./auth.js');
-    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
-      el.style.removeProperty('display');
-    }
-  }
+  const { isAuthed } = await import('./auth.js');
+  function update(){ if(!el) return; if(isAuthed()){ el.style.removeProperty('display'); } else { el.style.display='none'; } }
+  update();
+  window.addEventListener('auth-changed', update);
+  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN') update(); });
 }catch(_e){}
 </script>
+
 
 </body>
 </html>

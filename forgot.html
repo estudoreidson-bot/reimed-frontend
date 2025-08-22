@@ -21,27 +21,17 @@
     <div class="alt"><a href="login.html">Voltar ao login</a></div>
   </form>
 </main>
-<script type="module">
-import { api } from './auth.js';
-document.getElementById('f').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const email=document.getElementById('email').value.trim();
-  const d = await api('/auth/forgot','POST',{ email });
-  if(d.ok) alert('Se o e-mail existir, enviaremos um link de redefinição.');
-});
-</script>
-<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
 
 <script type="module">
 try{
   const el = document.getElementById('lkHist');
-  if(el){
-    const mod = await import('./auth.js');
-    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
-      el.style.removeProperty('display');
-    }
-  }
+  const { isAuthed } = await import('./auth.js');
+  function update(){ if(!el) return; if(isAuthed()){ el.style.removeProperty('display'); } else { el.style.display='none'; } }
+  update();
+  window.addEventListener('auth-changed', update);
+  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN') update(); });
 }catch(_e){}
 </script>
+
 
 </body></html>

@@ -17,42 +17,18 @@
 <div class="chat"><div class="msg recep">Preparando sua sala com o médico…</div></div>
 <footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
 </main>
-<script type="module">
-import { requireAuth } from "./auth.js";
-requireAuth();
-const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-api.onrender.com');
-(function start(){
-  // Proteção de fluxo: sem triagem -> volta para recepção
-  if(!localStorage.getItem('triageComplete') || !localStorage.getItem('selectedSpecialty')){
-    location.replace('receptionist.html'); return;
-  }
-  const specialty = localStorage.getItem('selectedSpecialty');
-  fetch(API_BASE+'/api/session',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({specialty})
-  }).then(r=>r.json()).then(d=>{
-    localStorage.setItem('sessionId', d.sessionId||'');
-    location.replace('medico.html');
-  }).catch(()=>{
-    // mesmo que a API caia, segue para a sala (o médico vai avisar erro)
-    location.replace('medico.html');
-  });
-})();
-</script>
-
-<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
 
 <script type="module">
 try{
   const el = document.getElementById('lkHist');
-  if(el){
-    const mod = await import('./auth.js');
-    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
-      el.style.removeProperty('display');
-    }
-  }
+  const { isAuthed } = await import('./auth.js');
+  function update(){ if(!el) return; if(isAuthed()){ el.style.removeProperty('display'); } else { el.style.display='none'; } }
+  update();
+  window.addEventListener('auth-changed', update);
+  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN') update(); });
 }catch(_e){}
 </script>
+
 
 </body>
 </html>
