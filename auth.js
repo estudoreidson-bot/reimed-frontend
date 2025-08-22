@@ -1,4 +1,6 @@
+
 export const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-api.onrender.com');
+
 export function token(){ return localStorage.getItem('AUTH_TOKEN')||''; }
 export function isAuthed(){ return !!token(); }
 export function setToken(t){ localStorage.setItem('AUTH_TOKEN', t); try{ window.dispatchEvent(new CustomEvent('auth-changed',{detail:{authed:true}})); }catch(_){} }

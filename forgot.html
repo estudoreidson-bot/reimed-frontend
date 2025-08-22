@@ -1,83 +1,35 @@
 <!doctype html><html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Recuperar senha – Queimadas Telemedicina</title>
-<link rel="stylesheet" href="style.css"><style>
-.form{ max-width:440px; margin:20px auto; background:#fff; border:1px solid #e6ebf5; padding:16px; border-radius:12px; }
-.form h2{ margin:0 0 10px; }
-.form label{ display:block; margin:10px 0 4px; font-weight:600; }
-.form input{ width:100%; padding:12px 14px; border:1px solid #cfd8ea; border-radius:10px; font-size:16px; }
-.form button{ margin-top:12px; background:#0e8240; color:#fff; border:none; padding:12px 16px; border-radius:10px; font-weight:700; width:100%; }
-.form .alt{ margin-top:10px; text-align:center; }
+<title>Recuperar senha – Telemedicina</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.topmenu{position:absolute;right:16px;top:12px;font-weight:700}
+.menu-btn{background:#fff;border:1px solid #cfd8ea;border-radius:10px;padding:8px 10px;cursor:pointer}
+.menu{position:absolute;right:0;margin-top:6px;background:#fff;border:1px solid #e6ebf5;border-radius:12px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.06);z-index:10}
+.menu a{display:block;padding:10px 12px;text-decoration:none;color:#0e8240}
+.menu a:hover{background:#f3f7ff}
+.container{max-width:920px;margin:20px auto;padding:16px}
+.item{background:#fff;border:1px solid #e6ebf5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.item .meta{font-size:13px;color:#5b6b8e;margin-bottom:6px}
+.item pre{white-space:pre-wrap}
 </style>
-<style>.toplink{position:absolute;right:16px;top:12px;font-weight:700} .toplink a{color:#0e8240;text-decoration:none}</style>
-<style>.sitefoot{max-width:920px;margin:30px auto 20px;text-align:center;color:#6b7899;font-size:12px} .sitefoot a{color:#6b7899;text-decoration:none}</style>
-<style>.hello{margin-right:10px;color:#0e8240}</style>
 </head><body>
-<header><img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas"><h1>Queimadas Telemedicina</h1><nav class="toplink"><span id="lkName" class="hello" style="display:none"></span> <a href="history.html" id="lkHist" style="display:none">Meu histórico</a> &nbsp;•&nbsp; <a href="#" id="lkLogout" style="display:none">Sair</a></nav></header>
-<main>
-  <form class="form" id="f">
-    <h2>Recuperar senha</h2>
-    <label>E-mail</label><input id="email" type="email" autocomplete="email">
-    <button type="submit">Enviar link</button>
-    <div class="alt"><a href="login.html">Voltar ao login</a></div>
-  </form>
+<header><img class="qbanner" src="prefeitura-queimadas.jpg"><h1>Queimadas Telemedicina</h1><nav class="topmenu">
+  <button id="userMenuBtn" class="menu-btn" style="display:none"><span id="helloTxt"></span> ▾</button>
+  <div id="userMenu" class="menu" style="display:none">
+    <a href="history.html" id="menuHist">Meu histórico</a>
+    <a href="#" id="menuLogout">Sair</a>
+  </div>
+</nav>
+</header>
+<main class="container">
+  <h2>Recuperar senha</h2>
+  <p>Informe seu e-mail cadastrado para receber o link de redefinição.</p>
+  <p><label>Email<br><input id="email" type="email" class="inpt"></label></p>
+  <p><button id="go" class="send">Enviar link</button> <a href="login.html">Voltar</a></p>
 </main>
-
-
-
-
-
-
-
-
 <script type="module">
-try{
-  const lkHist = document.getElementById('lkHist');
-  const lkLogout = document.getElementById('lkLogout');
-  const lkName = document.getElementById('lkName');
-  const mod = await import('./auth.js');
-  const { isAuthed, logout, api } = mod;
-
-  async function refreshName(){
-    if(!lkName) return;
-    if(!isAuthed()){ lkName.style.display='none'; return; }
-    let nm = localStorage.getItem('pacienteNome')||'';
-    if(!nm){
-      try{ const d = await api('/auth/me'); nm = (d.user && d.user.name) ? d.user.name : ''; if(nm) localStorage.setItem('pacienteNome', nm); }catch(_){}
-    }
-    if(nm){
-      const first = nm.split(' ')[0];
-      lkName.textContent = 'Olá, ' + first;
-      lkName.style.display = 'inline';
-    }else{
-      lkName.style.display = 'none';
-    }
-  }
-
-  function update(){
-    const authed = isAuthed();
-    if(lkHist){ authed ? lkHist.style.removeProperty('display') : (lkHist.style.display='none'); }
-    if(lkLogout){ authed ? lkLogout.style.removeProperty('display') : (lkLogout.style.display='none'); }
-    refreshName();
-  }
-
-  update();
-  window.addEventListener('auth-changed', update);
-  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN' || e.key==='pacienteNome') update(); });
-
-  if(lkLogout){
-    lkLogout.addEventListener('click', (e)=>{
-      e.preventDefault();
-      if(!isAuthed()) return;
-      const ok = window.confirm('Deseja realmente sair?');
-      if(!ok) return;
-      try{ localStorage.removeItem('pacienteNome'); localStorage.removeItem('pacienteCPF'); }catch{}
-      logout();
-      const priv = /receptionist\.html|paciente\.html|medico\.html|history\.html/i.test(location.pathname);
-      if(priv) location.replace('login.html'); else update();
-    });
-  }
-}catch(_e){}
+import { api } from './auth.js';
+go.onclick = async ()=>{ const d = await api('/auth/forgot','POST',{ email: email.value.trim() }); alert('Se existir cadastro, enviaremos o link.'); location.replace('login.html'); };
 </script>
-
 </body></html>

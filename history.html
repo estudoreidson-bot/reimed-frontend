@@ -3,64 +3,36 @@
 <title>Meu histórico – Telemedicina</title>
 <link rel="stylesheet" href="style.css">
 <style>
-.container{max-width:920px;margin:20px auto;padding:16px}
-.item{background:#fff;border:1px solid #e6ebf5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
-.item .meta{font-size:13px;color:#5b6b8e;margin-bottom:6px}
-.item pre{white-space:pre-wrap}
 .topmenu{position:absolute;right:16px;top:12px;font-weight:700}
 .menu-btn{background:#fff;border:1px solid #cfd8ea;border-radius:10px;padding:8px 10px;cursor:pointer}
 .menu{position:absolute;right:0;margin-top:6px;background:#fff;border:1px solid #e6ebf5;border-radius:12px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.06);z-index:10}
 .menu a{display:block;padding:10px 12px;text-decoration:none;color:#0e8240}
 .menu a:hover{background:#f3f7ff}
+.container{max-width:920px;margin:20px auto;padding:16px}
+.item{background:#fff;border:1px solid #e6ebf5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.item .meta{font-size:13px;color:#5b6b8e;margin-bottom:6px}
+.item pre{white-space:pre-wrap}
 </style>
 </head><body>
-<header><h1>Telemedicina</h1></header>
-<nav class="topmenu">
+<header><img class="qbanner" src="prefeitura-queimadas.jpg"><h1>Queimadas Telemedicina</h1><nav class="topmenu">
   <button id="userMenuBtn" class="menu-btn" style="display:none"><span id="helloTxt"></span> ▾</button>
   <div id="userMenu" class="menu" style="display:none">
     <a href="history.html" id="menuHist">Meu histórico</a>
     <a href="#" id="menuLogout">Sair</a>
   </div>
 </nav>
+</header>
 <main class="container">
   <h2>Meu histórico</h2>
   <div id="list"></div>
 </main>
 <script type="module">
-import { isAuthed, api, logout } from './auth.js';
+import { api } from './auth.js';
 const list = document.getElementById('list');
-
-function onlyDigits(s){ return String(s||'').replace(/\D+/g,''); }
-function formatCPF(c){ const d=onlyDigits(c).padStart(11,'0').slice(-11); return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
-function maskCPF(c){ const d=onlyDigits(c); if(d.length!==11) return c||''; return d.replace(/(\d{3})\d{6}(\d{2})/, '$1.***.***-$2'); }
-
-async function refreshHeader(){
-  const btn = document.getElementById('userMenuBtn');
-  const menu = document.getElementById('userMenu');
-  const hello = document.getElementById('helloTxt');
-  if(!isAuthed()){ btn.style.display='none'; menu.style.display='none'; return; }
-  let name = localStorage.getItem('pacienteNome')||'';
-  let cpf  = localStorage.getItem('pacienteCPF')||'';
-  if(!name || !cpf){
-    try{ const d = await api('/auth/me'); name = name || (d.user?.name||''); cpf = cpf || (d.user?.cpf||''); localStorage.setItem('pacienteNome', name||''); localStorage.setItem('pacienteCPF', cpf||''); }catch{}
-  }
-  const first = (name||'').split(' ')[0]||'Paciente';
-  const cpfTxt = maskCPF(cpf);
-  hello.textContent = `Bem-vindo(a), ${first}${cpfTxt ? ' • '+cpfTxt : ''}`;
-  btn.style.display='inline-block';
-  // menu toggle
-  btn.onclick = (e)=>{ e.preventDefault(); menu.style.display = (menu.style.display==='block'?'none':'block'); };
-  document.addEventListener('click', (e)=>{ if(menu.style.display!=='block') return; const inside=e.target===menu||menu.contains(e.target)||e.target===btn; if(!inside) menu.style.display='none'; });
-  document.getElementById('menuLogout').onclick = (e)=>{ e.preventDefault(); if(!confirm('Deseja realmente sair?')) return; localStorage.removeItem('pacienteNome'); localStorage.removeItem('pacienteCPF'); logout(); location.replace('login.html'); };
-}
-async function load(){
-  try{
-    const d = await api('/api/history','GET');
-    if(!d.ok || !d.items?.length){ list.innerHTML = '<p>Sem registros.</p>'; } else {
-      list.innerHTML = d.items.map(it=>`<div class="item"><div class="meta">${new Date(it.created_at||Date.now()).toLocaleString()}</div><pre>${(it.preview||'').replace(/[<>&]/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</pre></div>`).join('');
-    }
-  }catch{ list.innerHTML = '<p>Falha ao carregar.</p>'; }
-}
-refreshHeader(); load();
+(async ()=>{
+  const d = await api('/api/history');
+  if(!d.ok || !d.items?.length){ list.innerHTML = '<p>Sem registros.</p>'; return; }
+  list.innerHTML = d.items.map(it=>\`<div class="item"><div class="meta">\${new Date(it.created_at).toLocaleString()} – \${it.specialty||''}</div><pre>\${(it.preview||'').replace(/[<>&]/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</pre></div>\`).join('');
+})();
 </script>
 </body></html>
