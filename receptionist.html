@@ -5,15 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recepção – Queimadas Telemedicina</title>
 <link rel="stylesheet" href="style.css">
-<style>.toplink{position:absolute;right:16px;top:12px;font-weight:700} .toplink a{color:#0e8240;text-decoration:none}</style>
-<style>.sitefoot{max-width:920px;margin:30px auto 20px;text-align:center;color:#6b7899;font-size:12px} .sitefoot a{color:#6b7899;text-decoration:none}</style>
-<style>.hello{margin-right:10px;color:#0e8240}</style>
+<style>
+.topmenu{position:absolute;right:16px;top:12px;font-weight:700}
+.menu-btn{background:#fff;border:1px solid #cfd8ea;border-radius:10px;padding:8px 10px;cursor:pointer}
+.menu{position:absolute;right:0;margin-top:6px;background:#fff;border:1px solid #e6ebf5;border-radius:12px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.06);z-index:10}
+.menu a{display:block;padding:10px 12px;text-decoration:none;color:#0e8240}
+.menu a:hover{background:#f3f7ff}
+</style>
 </head>
 <body>
   <header>
     <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
     <h1>Queimadas Telemedicina</h1>
-  <nav class="toplink"><span id="lkName" class="hello" style="display:none"></span> <a href="history.html" id="lkHist" style="display:none">Meu histórico</a> &nbsp;•&nbsp; <a href="#" id="lkLogout" style="display:none">Sair</a></nav></header>
+  <nav class="topmenu">
+  <button id="userMenuBtn" class="menu-btn" style="display:none"><span id="helloTxt"></span> ▾</button>
+  <div id="userMenu" class="menu" style="display:none">
+    <a href="history.html" id="menuHist">Meu histórico</a>
+    <a href="#" id="menuLogout">Sair</a>
+  </div>
+</nav>
+</header>
 
   <main>
     <div id="chat" class="chat" aria-live="polite">
@@ -34,76 +45,87 @@
     </div>
   </main>
 
+<script>
+const chat = document.getElementById('chat');
+const boxEsp = document.getElementById('especialidades');
+const lista = document.getElementById('lista-esp');
+const pre = document.getElementById('pre-transfer');
+const aguarde = document.getElementById('aguarde');
 
+function pushMsg(el){ chat.appendChild(el); chat.scrollTop = chat.scrollHeight; }
 
+function typeMessage(text, klass="recep", min=10000){
+  const m = document.createElement('div');
+  m.className = 'msg '+klass;
+  const delay = Math.max(min, Math.min(20000, text.length*60)); // 60ms por caractere, min 10s
+  m.textContent = 'Recepção está digitando…';
+  pushMsg(m);
+  setTimeout(()=>{ m.textContent = text; }, delay);
+  return new Promise(res=>setTimeout(res, delay+200));
+}
 
-
-
-
-
-
-<script type="module">
-try{
-  const lkHist = document.getElementById('lkHist');
-  const lkLogout = document.getElementById('lkLogout');
-  const lkName = document.getElementById('lkName');
-  const mod = await import('./auth.js');
-  const { isAuthed, logout, api } = mod;
-
-  async function refreshName(){
-    if(!lkName) return;
-    if(!isAuthed()){ lkName.style.display='none'; return; }
-    let nm = localStorage.getItem('pacienteNome')||'';
-    if(!nm){
-      try{ const d = await api('/auth/me'); nm = (d.user && d.user.name) ? d.user.name : ''; if(nm) localStorage.setItem('pacienteNome', nm); }catch(_){}
-    }
-    if(nm){
-      const first = nm.split(' ')[0];
-      lkName.textContent = 'Olá, ' + first;
-      lkName.style.display = 'inline';
-    }else{
-      lkName.style.display = 'none';
-    }
+// Welcome + load especialidades
+(async ()=>{
+  await typeMessage('Bem-vindo(a) à Queimadas Telemedicina!');
+  await typeMessage('Escolha abaixo a especialidade para direcionarmos você ao médico adequado.');
+  // carrega lista
+  const data = await fetch('especialidades.json').then(r=>r.json()).catch(()=>[]);
+  lista.innerHTML = '';
+  for(const item of data){
+    const b = document.createElement('button');
+    b.className='btn'; b.type='button';
+    b.innerHTML = '<strong>'+item.nome+'</strong><small>'+item.descricao+'</small>';
+    b.addEventListener('click', ()=> selectSpecialty(item.nome));
+    lista.appendChild(b);
   }
+  boxEsp.style.display='block';
+})();
 
-  function update(){
-    const authed = isAuthed();
-    if(lkHist){ authed ? lkHist.style.removeProperty('display') : (lkHist.style.display='none'); }
-    if(lkLogout){ authed ? lkLogout.style.removeProperty('display') : (lkLogout.style.display='none'); }
-    refreshName();
-  }
+async function selectSpecialty(nome){
+  boxEsp.style.display='none';
+  localStorage.setItem('selectedSpecialty', nome);
+  await typeMessage('Especialidade escolhida: '+nome+'.', 'eu', 500);
+  pre.style.display='block';
+  pre.textContent = 'Certo. Vou encaminhar você para o médico de '+nome+'. Tempo estimado: _calculando…';
+  const minutos = Math.floor(Math.random()*5)+1; // 1–5
+  const total = minutos*60;
+  let t=total;
+  pre.innerHTML = 'Certo. Vou encaminhar você para o médico de <b>'+nome+'</b>. Tempo estimado: <b>'+minutos+' min</b>.';
+  aguarde.style.display='block';
+  const timer = document.createElement('div');
+  timer.innerHTML = '<span class="badge">Aguardando atendimento: <span id="count">--:--</span></span>';
+  aguarde.innerHTML='';
+  aguarde.appendChild(timer);
+  const span = timer.querySelector('#count');
+  const iv = setInterval(()=>{
+     const mm = String(Math.floor(t/60)).padStart(1,'0');
+     const ss = String(t%60).padStart(2,'0');
+     span.textContent = mm+':'+ss;
+     if(--t<0){ clearInterval(iv); conectar(); }
+  },1000);
+  // sinaliza fluxo válido
+  localStorage.setItem('triageComplete','1');
+}
 
-  update();
-  window.addEventListener('auth-changed', update);
-  window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN' || e.key==='pacienteNome') update(); });
-
-  if(lkLogout){
-    lkLogout.addEventListener('click', (e)=>{
-      e.preventDefault();
-      if(!isAuthed()) return;
-      const ok = window.confirm('Deseja realmente sair?');
-      if(!ok) return;
-      try{ localStorage.removeItem('pacienteNome'); localStorage.removeItem('pacienteCPF'); }catch{}
-      logout();
-      const priv = /receptionist\.html|paciente\.html|medico\.html|history\.html/i.test(location.pathname);
-      if(priv) location.replace('login.html'); else update();
-    });
-  }
-}catch(_e){}
+function conectar(){
+  // vai primeiro para a ponte que cria a sessão e redireciona
+  location.href = 'paciente.html';
+}
+// Override de tempos de digitação para Recepção
+function __calcTypingTimeFor(texto){
+  const words = String(texto||"").trim().split(/\s+/).filter(Boolean).length || 8;
+  return Math.max(6900, Math.round(words * 2300)); // 1 palavra a cada ~2.3s
+}
+function __calcThinkingTime(){
+  return Math.floor(15000 + Math.random()*15000); // 15–30s
+}
+async function recepcaoPensandoEDigitando(texto){
+  if (typeof delay !== 'function'){ window.delay = (ms)=>new Promise(r=>setTimeout(r,ms)); }
+  if (typeof status === 'function'){ status("Recepção pensando…"); }
+  await delay(__calcThinkingTime());
+  if (typeof status === 'function'){ status("Recepção digitando…"); }
+  await delay(__calcTypingTimeFor(texto));
+}
 </script>
-
 </body>
 </html>
-
-<script type="module">
-document.addEventListener("keydown", (e)=>{
-  const el = e.target;
-  if((el.tagName==="INPUT" || el.tagName==="TEXTAREA") && e.key==="Enter"){
-    const v = (el.value||"").trim();
-    if(containsForbiddenIA(v)){
-      e.preventDefault();
-      alert(STD_REPLY);
-    }
-  }
-});
-</script>
