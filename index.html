@@ -9,22 +9,41 @@
     location.replace('login.html');
   </script>
 <style>.sitefoot{max-width:920px;margin:30px auto 20px;text-align:center;color:#6b7899;font-size:12px} .sitefoot a{color:#6b7899;text-decoration:none}</style>
+<style>.toplink{position:absolute;right:16px;top:12px;font-weight:700} .toplink a{color:#0e8240;text-decoration:none}</style>
 </head>
 <body>
 <footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
 
 
+
+
+
+
 <script type="module">
 try{
-  const el = document.getElementById('lkHist');
-  const { isAuthed } = await import('./auth.js');
-  function update(){ if(!el) return; if(isAuthed()){ el.style.removeProperty('display'); } else { el.style.display='none'; } }
+  const lkHist = document.getElementById('lkHist');
+  const lkLogout = document.getElementById('lkLogout');
+  const mod = await import('./auth.js');
+  const { isAuthed, logout } = mod;
+  function update(){
+    const authed = isAuthed();
+    if(lkHist){ authed ? lkHist.style.removeProperty('display') : (lkHist.style.display='none'); }
+    if(lkLogout){ authed ? lkLogout.style.removeProperty('display') : (lkLogout.style.display='none'); }
+  }
   update();
   window.addEventListener('auth-changed', update);
   window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN') update(); });
+  if(lkLogout){
+    lkLogout.addEventListener('click', (e)=>{
+      e.preventDefault();
+      logout();
+      // Se estiver em página pública, mantém; se estiver em página privada, manda para login.
+      const priv = /receptionist\.html|paciente\.html|medico\.html|history\.html/i.test(location.pathname);
+      if(priv) location.replace('login.html'); else update();
+    });
+  }
 }catch(_e){}
 </script>
-
 
 </body>
 </html>
