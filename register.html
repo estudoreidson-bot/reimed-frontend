@@ -1,42 +1,22 @@
+
 <!doctype html><html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cadastrar – Telemedicina</title>
-<link rel="stylesheet" href="style.css">
-<style>
-.topmenu{position:absolute;right:16px;top:12px;font-weight:700}
-.menu-btn{background:#fff;border:1px solid #cfd8ea;border-radius:10px;padding:8px 10px;cursor:pointer}
-.menu{position:absolute;right:0;margin-top:6px;background:#fff;border:1px solid #e6ebf5;border-radius:12px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.06);z-index:10}
-.menu a{display:block;padding:10px 12px;text-decoration:none;color:#0e8240}
-.menu a:hover{background:#f3f7ff}
-.container{max-width:920px;margin:20px auto;padding:16px}
-.item{background:#fff;border:1px solid #e6ebf5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
-.item .meta{font-size:13px;color:#5b6b8e;margin-bottom:6px}
-.item pre{white-space:pre-wrap}
-</style>
-</head><body>
-<header><img class="qbanner" src="prefeitura-queimadas.jpg"><h1>Queimadas Telemedicina</h1><nav class="topmenu">
-  <button id="userMenuBtn" class="menu-btn" style="display:none"><span id="helloTxt"></span> ▾</button>
-  <div id="userMenu" class="menu" style="display:none">
-    <a href="history.html" id="menuHist">Meu histórico</a>
-    <a href="#" id="menuLogout">Sair</a>
-  </div>
-</nav>
-</header>
+<title>Cadastrar</title><link rel="stylesheet" href="style.css"></head><body>
+<header><h3>Cadastrar paciente</h3></header>
 <main class="container">
-  <h2>Novo cadastro</h2>
-  <p><label>Nome<br><input id="name" class="inpt"></label></p>
-  <p><label>Email<br><input id="email" type="email" class="inpt"></label></p>
-  <p><label>CPF<br><input id="cpf" class="inpt"></label></p>
-  <p><label>Senha<br><input id="pw" type="password" class="inpt"></label></p>
-  <p><button id="go" class="send">Cadastrar</button> <a href="login.html">Já tenho conta</a></p>
+  <div class="row"><label>Nome<br><input id="name" class="inpt"></label></div>
+  <div class="row"><label>Email<br><input id="email" type="email" class="inpt"></label></div>
+  <div class="row"><label>CPF<br><input id="cpf" class="inpt"></label></div>
+  <div class="row"><label>Senha<br><input id="pw" type="password" class="inpt"></label></div>
+  <div class="row"><button id="go" class="btn">Cadastrar</button></div>
 </main>
 <script type="module">
 import { api, setToken } from './auth.js';
-document.getElementById('go').onclick = async ()=>{
-  const payload = { name: name.value.trim(), email: email.value.trim(), cpf: cpf.value.trim(), password: pw.value };
-  const d = await api('/auth/register','POST', payload);
-  if(!d.ok){ alert('Falha no cadastro'); return; }
-  setToken(d.token); localStorage.setItem('pacienteNome', d.user?.name||''); localStorage.setItem('pacienteCPF', d.user?.cpf||''); location.replace('receptionist.html');
+go.onclick = async ()=>{
+  const d = await api('/auth/register','POST',{ name:name.value.trim(), email:email.value.trim(), cpf:cpf.value.trim(), password: pw.value });
+  if(!d.ok){ alert(d.error||'Falha no cadastro'); return; }
+  setToken(d.token);
+  localStorage.setItem('pacienteNome', d.user?.name||''); localStorage.setItem('pacienteCPF', d.user?.cpf||'');
+  location.replace('history.html');
 };
-</script>
-</body></html>
+</script></body></html>

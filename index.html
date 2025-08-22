@@ -1,54 +1,16 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Queimadas Telemedicina</title>
-  <script>
-    // Ir direto para a recepção
-    location.replace('receptionist.html');
-  </script>
-<style>
-.topmenu{position:absolute;right:16px;top:12px;font-weight:700}
-.menu-btn{background:#fff;border:1px solid #cfd8ea;border-radius:10px;padding:8px 10px;cursor:pointer}
-.menu{position:absolute;right:0;margin-top:6px;background:#fff;border:1px solid #e6ebf5;border-radius:12px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.06);z-index:10}
-.menu a{display:block;padding:10px 12px;text-decoration:none;color:#0e8240}
-.menu a:hover{background:#f3f7ff}
-.container{max-width:920px;margin:20px auto;padding:16px}
-.item{background:#fff;border:1px solid #e6ebf5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
-.item .meta{font-size:13px;color:#5b6b8e;margin-bottom:6px}
-.item pre{white-space:pre-wrap}
-</style>
-</head>
-<body><script type="module">
-try{
-  const btn = document.getElementById('userMenuBtn');
-  const menu = document.getElementById('userMenu');
-  const hello = document.getElementById('helloTxt');
-  const mod = await import('./auth.js');
-  const { isAuthed, logout, api } = mod;
-  function onlyDigits(s){ return String(s||'').replace(/\D+/g,''); }
-  function formatCPF(c){ const d=onlyDigits(c).padStart(11,'0').slice(-11); return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
-  function maskCPF(c){ const d=onlyDigits(c); if(d.length!==11) return c||''; return d.replace(/(\d{3})\d{6}(\d{2})/, '$1.***.***-$2'); }
-  async function refreshHeader(){
-    if(!btn || !menu || !hello) return;
-    if(!isAuthed()){ btn.style.display='none'; menu.style.display='none'; return; }
-    let name = localStorage.getItem('pacienteNome')||'';
-    let cpf  = localStorage.getItem('pacienteCPF')||'';
-    if(!name || !cpf){
-      try{ const d = await api('/auth/me'); name = name || (d.user?.name||''); cpf = cpf || (d.user?.cpf||''); localStorage.setItem('pacienteNome', name||''); localStorage.setItem('pacienteCPF', cpf||''); }catch{}
-    }
-    const first = (name||'').split(' ')[0]||'Paciente';
-    const cpfTxt = maskCPF(cpf);
-    hello.textContent = `Bem-vindo(a), ${first}${cpfTxt ? ' • ' + cpfTxt : ''}`;
-    btn.style.display='inline-block';
-    btn.onclick = (e)=>{ e.preventDefault(); menu.style.display = (menu.style.display==='block'?'none':'block'); };
-    document.addEventListener('click', (e)=>{ if(menu.style.display!=='block') return; const inside=e.target===menu||menu.contains(e.target)||e.target===btn; if(!inside) menu.style.display='none'; });
-    document.getElementById('menuLogout').onclick = (e)=>{ e.preventDefault(); if(!confirm('Deseja realmente sair?')) return; localStorage.removeItem('pacienteNome'); localStorage.removeItem('pacienteCPF'); logout(); const priv=/receptionist\.html|paciente\.html|medico\.html|history\.html/i.test(location.pathname); if(priv) location.replace('login.html'); };
-  }
-  function update(){ refreshHeader(); }
-  update(); window.addEventListener('auth-changed', update); window.addEventListener('storage', (e)=>{ if(e.key==='AUTH_TOKEN'||e.key==='pacienteNome'||e.key==='pacienteCPF') update(); });
-}catch(_e){}
-</script>
-</body>
-</html>
+
+<!doctype html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Queimadas Telemedicina</title><link rel="stylesheet" href="style.css">
+</head><body>
+<header><div class="banner"><img src="https://upload.wikimedia.org/wikipedia/commons/9/99/OOjs_UI_icon_userAvatar.svg"><h2>Queimadas Telemedicina</h2></div></header>
+<main class="container">
+<div class="nav">
+  <a class="btn" href="register.html">Cadastrar paciente</a>
+  <a class="btn" href="login.html">Entrar</a>
+  <a class="btn" href="receptionist.html">Recepção</a>
+</div>
+<div class="card small">Defina a API se precisar: abra o console e rode<br>
+<code>localStorage.setItem('API_BASE','https://SEU-SERVICO.onrender.com')</code></div>
+</main>
+</body></html>
