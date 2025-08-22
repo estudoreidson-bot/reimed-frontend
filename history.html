@@ -1,0 +1,44 @@
+<!doctype html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meu histórico – Queimadas Telemedicina</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.container{max-width:920px;margin:20px auto;padding:16px}
+h2{margin:8px 0 16px}
+.item{background:#fff;border:1px solid #e6ebf5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.item .meta{font-size:13px;color:#5b6b8e;margin-bottom:6px}
+.item .spec{font-weight:700}
+.item pre{white-space:pre-wrap;font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
+.topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.topbar a{color:#0e8240;text-decoration:none;font-weight:700}
+</style><style>.toplink{position:absolute;right:16px;top:12px;font-weight:700} .toplink a{color:#0e8240;text-decoration:none}</style>
+<style>.sitefoot{max-width:920px;margin:30px auto 20px;text-align:center;color:#6b7899;font-size:12px} .sitefoot a{color:#6b7899;text-decoration:none}</style>
+</head><body>
+<header><img class="qbanner" src="prefeitura-queimadas.jpg" alt=""><h1>Queimadas Telemedicina</h1><nav class="toplink"><a href="history.html">Meu histórico</a></nav></header>
+<main class="container">
+  <div class="topbar">
+    <h2>Meu histórico</h2>
+    <a href="receptionist.html">Nova consulta</a>
+  </div>
+  <div id="list"></div>
+</main>
+<script type="module">
+import { requireAuth, api } from './auth.js';
+requireAuth();
+const list = document.getElementById('list');
+async function load(){
+  const d = await api('/api/history','GET');
+  if(!d.ok){ list.innerHTML = '<p>Não foi possível carregar seu histórico.</p>'; return; }
+  if(!d.items || d.items.length===0){ list.innerHTML = '<p>Seu histórico aparecerá aqui após os atendimentos.</p>'; return; }
+  list.innerHTML = d.items.map(it=>`
+    <div class="item">
+      <div class="meta"><span class="spec">${it.specialty||'Geral'}</span> • ${new Date(it.created_at||Date.now()).toLocaleString()}</div>
+      <pre>${(it.preview||'').replace(/[<>&]/g, s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</pre>
+    </div>
+  `).join('');
+}
+load();
+</script>
+
+<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
+</body></html>
