@@ -11,8 +11,10 @@ h2{margin:8px 0 16px}
 .item pre{white-space:pre-wrap;font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
 .topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
 .topbar a{color:#0e8240;text-decoration:none;font-weight:700}
-</style></head><body>
-<header><img class="qbanner" src="prefeitura-queimadas.jpg" alt=""><h1>Queimadas Telemedicina</h1></header>
+</style><style>.toplink{position:absolute;right:16px;top:12px;font-weight:700} .toplink a{color:#0e8240;text-decoration:none}</style>
+<style>.sitefoot{max-width:920px;margin:30px auto 20px;text-align:center;color:#6b7899;font-size:12px} .sitefoot a{color:#6b7899;text-decoration:none}</style>
+</head><body>
+<header><img class="qbanner" src="prefeitura-queimadas.jpg" alt=""><h1>Queimadas Telemedicina</h1><nav class="toplink" id="lkHist" style="display:none"><a href="history.html">Meu histórico</a></nav></header>
 <main class="container">
   <div class="topbar">
     <h2>Meu histórico</h2>
@@ -37,4 +39,19 @@ async function load(){
 }
 load();
 </script>
+
+<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
+
+<script type="module">
+try{
+  const el = document.getElementById('lkHist');
+  if(el){
+    const mod = await import('./auth.js');
+    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
+      el.style.removeProperty('display');
+    }
+  }
+}catch(_e){}
+</script>
+
 </body></html>

@@ -9,8 +9,10 @@
 .form button{ margin-top:12px; background:#0e8240; color:#fff; border:none; padding:12px 16px; border-radius:10px; font-weight:700; width:100%; }
 .form .alt{ margin-top:10px; text-align:center; }
 </style>
+<style>.toplink{position:absolute;right:16px;top:12px;font-weight:700} .toplink a{color:#0e8240;text-decoration:none}</style>
+<style>.sitefoot{max-width:920px;margin:30px auto 20px;text-align:center;color:#6b7899;font-size:12px} .sitefoot a{color:#6b7899;text-decoration:none}</style>
 </head><body>
-<header><img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas"><h1>Queimadas Telemedicina</h1></header>
+<header><img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas"><h1>Queimadas Telemedicina</h1><nav class="toplink" id="lkHist" style="display:none"><a href="history.html">Meu histórico</a></nav></header>
 <main>
   <form class="form" id="f">
     <h2>Redefinir senha</h2>
@@ -29,4 +31,19 @@ document.getElementById('f').addEventListener('submit', async (e)=>{
   const d = await api('/auth/reset','POST',{ token, password });
   if(d.ok){ alert('Senha alterada. Faça login.'); location.replace('login.html'); } else alert(d.error||'Falha na redefinição');
 });
-</script></body></html>
+</script>
+<footer class="sitefoot"><a href="admin.html" title="Acesso restrito ao médico">Acesso do médico</a></footer>
+
+<script type="module">
+try{
+  const el = document.getElementById('lkHist');
+  if(el){
+    const mod = await import('./auth.js');
+    if(mod && typeof mod.isAuthed==='function' && mod.isAuthed()){
+      el.style.removeProperty('display');
+    }
+  }
+}catch(_e){}
+</script>
+
+</body></html>
