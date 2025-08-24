@@ -55,6 +55,36 @@
       location.replace('login.html');
     }
   })();
+
+// ====== Poll de aprovações para exibir código ao paciente ======
+(function initApprovalPolling(){
+  const shown = new Set();
+  async function poll(){
+    try{
+      const h = await fetch(`${API_BASE}/patient/docs`, {
+        headers:{ "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') }
+      });
+      const data = await h.json().catch(()=>({}));
+      if(!data || !data.items) return;
+      for(const d of data.items){
+        if(d.status === "aprovado" && d.approvalCode && !shown.has(d.id)){
+          shown.add(d.id);
+          const msg = [
+            "Receita aprovada.",
+            "Como proceder na Farmácia Popular, Básica do SUS ou parceira:",
+            "1) Leve um documento com CPF.",
+            "2) Mostre este código de aprovação ao atendente: " + d.approvalCode,
+            "3) O atendente validará e dispensará conforme a receita aprovada."
+          ].join("\n");
+          addMsg("assistant", msg);
+        }
+      }
+    }catch(e){ /* silencioso */ }
+  }
+  setInterval(poll, 10000);
+  poll();
+})();
+
 </script>
 
 <body>
@@ -150,6 +180,7 @@
   const digitar = Math.max(3400, Math.round(words * typePerWord));
   status("Médico digitando…");
   await delay(digitar);
+clearStatus();
 }
 
     async function acordarServidor(){
@@ -248,6 +279,36 @@
         clearStatus();
       }
     })();
-  </script>
+  
+// ====== Poll de aprovações para exibir código ao paciente ======
+(function initApprovalPolling(){
+  const shown = new Set();
+  async function poll(){
+    try{
+      const h = await fetch(`${API_BASE}/patient/docs`, {
+        headers:{ "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') }
+      });
+      const data = await h.json().catch(()=>({}));
+      if(!data || !data.items) return;
+      for(const d of data.items){
+        if(d.status === "aprovado" && d.approvalCode && !shown.has(d.id)){
+          shown.add(d.id);
+          const msg = [
+            "Receita aprovada.",
+            "Como proceder na Farmácia Popular, Básica do SUS ou parceira:",
+            "1) Leve um documento com CPF.",
+            "2) Mostre este código de aprovação ao atendente: " + d.approvalCode,
+            "3) O atendente validará e dispensará conforme a receita aprovada."
+          ].join("\n");
+          addMsg("assistant", msg);
+        }
+      }
+    }catch(e){ /* silencioso */ }
+  }
+  setInterval(poll, 10000);
+  poll();
+})();
+
+</script>
 </body>
 </html>
