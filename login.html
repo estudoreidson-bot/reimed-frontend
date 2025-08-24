@@ -92,7 +92,9 @@
     };
 
     // Se já logado, pula para recepção
-    // auto-login desativado por decisão do cliente
+    if(localStorage.getItem('patientToken')){
+      location.replace('receptionist.html');
+    }
   </script>
 </body>
 </html>
