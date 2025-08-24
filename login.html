@@ -1,20 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login do Paciente – Queimadas Telemedicina</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-card{max-width:420px;margin:40px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px}
+    .login-card h2{margin:0 0 12px 0}
+    label{display:block;font-weight:600;margin-top:10px}
+    input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px}
+    .row{display:flex;gap:10px;margin-top:14px}
+    button{flex:1;padding:12px;border-radius:10px;border:1px solid #0f172a;background:#0f172a;color:#fff;cursor:pointer}
+    button.secondary{background:#fff;color:#0f172a}
+    .msg{margin-top:10px;color:#0a3b12}
+    .err{margin-top:10px;color:#7f1d1d}
+    .legal{font-size:12px;opacity:.9;margin-top:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
+    <h1>Queimadas Telemedicina</h1>
+  </header>
+  <main>
+    <div class="login-card">
+      <h2>Identifique-se</h2>
+      <p>Use seu CPF e crie uma senha no primeiro acesso. Nas próximas consultas, sua evolução e condutas anteriores ficarão disponíveis ao médico.</p>
+      <label>CPF</label>
+      <input id="cpf" placeholder="Somente números" inputmode="numeric" autocomplete="username">
+      <label>Senha</label>
+      <input id="senha" type="password" placeholder="Sua senha" autocomplete="current-password">
+      <label>Nome completo (apenas no primeiro acesso)</label>
+      <input id="nome" placeholder="Seu nome completo" autocomplete="name">
+      <div class="row">
+        <button id="entrar">Entrar</button>
+        <button id="criar" class="secondary">Primeiro acesso</button>
+      </div>
+      <div id="msg" class="msg"></div>
+      <div id="err" class="err"></div>
+      <div class="legal">Ao continuar, você concorda com o registro do seu histórico clínico para melhorar o atendimento nas próximas consultas.</div>
+    </div>
+  </main>
+  <footer class="atende"><img src="atende-mais.png" alt="Atende+"></footer>
+  <script>
+    const API_BASE = "https://remedy-queimadas-api.onrender.com";
+    const cpfEl = document.getElementById('cpf');
+    const senhaEl = document.getElementById('senha');
+    const nomeEl = document.getElementById('nome');
+    const msgEl = document.getElementById('msg');
+    const errEl = document.getElementById('err');
+    function setErr(t){ errEl.textContent = t||""; }
+    function setMsg(t){ msgEl.textContent = t||""; }
+    function onlyDigits(s){ return String(s||'').replace(/\D+/g,''); }
 
-<!doctype html><html lang="pt-BR"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Entrar</title><link rel="stylesheet" href="style.css"></head><body>
-<header><h3>Entrar</h3></header>
-<main class="container">
-  <div class="row"><label>CPF<br><input id="cpf" class="inpt"></label></div>
-  <div class="row"><label>Senha<br><input id="pw" type="password" class="inpt"></label></div>
-  <div class="row"><button id="go" class="btn">Entrar</button> <a class="small" href="forgot.html">Esqueci minha senha</a></div>
-</main>
-<script type="module">
-import { api, setToken } from './auth.js';
-go.onclick = async ()=>{
-  const d = await api('/auth/login','POST',{ cpf:cpf.value.trim(), password: pw.value });
-  if(!d.ok){ alert('Falha no login'); return; }
-  setToken(d.token);
-  localStorage.setItem('pacienteNome', d.user?.name||''); localStorage.setItem('pacienteCPF', d.user?.cpf||'');
-  location.replace('history.html');
-};
-</script></body></html>
+    async function post(url, body){
+      const r = await fetch(API_BASE+url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{}) });
+      const j = await r.json().catch(()=>({ ok:false, error:'Falha de rede' }));
+      if(!r.ok || !j.ok) throw new Error(j.error||'Falha de rede');
+      return j;
+    }
+
+    document.getElementById('entrar').onclick = async ()=>{
+      setErr(""); setMsg("");
+      const cpf = onlyDigits(cpfEl.value);
+      const senha = senhaEl.value;
+      if(!cpf || !senha){ setErr("Informe CPF e senha"); return; }
+      try{
+        const { token, patient } = await post('/auth/patient/login',{ cpf, password: senha });
+        localStorage.setItem('patientToken', token);
+        localStorage.setItem('pacienteCPF', patient.cpf);
+        localStorage.setItem('pacienteNome', patient.nomeCompleto);
+        location.replace('receptionist.html');
+      }catch(e){ setErr(e.message); }
+    };
+
+    document.getElementById('criar').onclick = async ()=>{
+      setErr(""); setMsg("");
+      const cpf = onlyDigits(cpfEl.value);
+      const senha = senhaEl.value;
+      const nome = nomeEl.value.trim();
+      if(!cpf || !senha || !nome){ setErr("Informe CPF, senha e nome"); return; }
+      try{
+        const { token, patient } = await post('/auth/patient/register',{ cpf, password: senha, nomeCompleto: nome });
+        localStorage.setItem('patientToken', token);
+        localStorage.setItem('pacienteCPF', patient.cpf);
+        localStorage.setItem('pacienteNome', patient.nomeCompleto);
+        setMsg("Cadastro realizado. Redirecionando…");
+        setTimeout(()=> location.replace('receptionist.html'), 600);
+      }catch(e){ setErr(e.message); }
+    };
+
+    // Se já logado, pula para recepção
+    if(localStorage.getItem('patientToken')){
+      location.replace('receptionist.html');
+    }
+  </script>
+</body>
+</html>

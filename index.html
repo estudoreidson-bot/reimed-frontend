@@ -6,7 +6,7 @@
   <title>Queimadas Telemedicina</title>
   <script>
     // Ir direto para a recepção
-    location.replace('receptionist.html');
+    location.replace(localStorage.getItem('patientToken') ? 'receptionist.html' : 'login.html');
   </script>
 </head>
 <body></body>

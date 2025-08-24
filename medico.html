@@ -49,6 +49,14 @@
     }
   </style>
 </head>
+<script>
+  (function(){
+    if(!localStorage.getItem('patientToken')){
+      location.replace('login.html');
+    }
+  })();
+</script>
+
 <body>
   <header>
     <img class="banner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas" />
@@ -98,7 +106,7 @@
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
-            headers:{ "Content-Type":"application/json" },
+            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
           }).catch(()=>{});
         }
@@ -119,7 +127,7 @@
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
-            headers:{ "Content-Type":"application/json" },
+            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
           }).catch(()=>{});
         }
@@ -160,7 +168,7 @@
       };
       const resp = await fetch(`${API_BASE}/api/medico/chat`, {
         method:"POST",
-        headers:{ "Content-Type":"application/json" },
+        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
         body: JSON.stringify(body)
       });
       if(!resp.ok) throw new Error("Falha ao contatar IA");
@@ -226,6 +234,13 @@
         await pensandoEDigitando(primeira);
         historico.push({ role:"assistant", content: primeira });
         addMsg("assistant", primeira);
+        try{
+          fetch(API_BASE+'/patient/consultas', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('patientToken')||'') },
+            body: JSON.stringify({ specialty: ESPECIALIDADE, messages: historico, assistant: primeira })
+          });
+        }catch(e){ console.warn('log consulta falhou', e); }
       }catch(e){
         addMsg("assistant", "Não consegui contato com o servidor agora. Vamos tentar novamente em alguns segundos. Se persistir, volte para a recepção.");
         console.error(e);
