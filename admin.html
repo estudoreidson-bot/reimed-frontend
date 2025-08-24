@@ -104,7 +104,7 @@
   </div></div>
 
 <script>
-const API = (localStorage.getItem("API_BASE") || "https://remedy-queimadas-api.onrender.com");
+const API = "https://remedy-queimadas-api.onrender.com";
 let token = localStorage.getItem("adm_token") || null;
 
 const els = {
@@ -147,33 +147,13 @@ async function api(path, opt={}){
   return await res.json();
 }
 
-
 els.loginBtn.onclick = async ()=>{
   try{
-    els.loginMsg.textContent = "";
-    const cpf = String(els.cpf.value||"").replace(/\D+/g,"");
-    const password = String(els.pwd.value||"");
-    if(!cpf || !password){ els.loginMsg.textContent = "Informe CPF e senha."; return; }
-    const res = await fetch(API + "/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cpf, password })
-    });
-    const data = await res.json().catch(()=>({ ok:false, error:"Falha de rede" }));
-    if(!res.ok || !data.ok){
-      els.loginMsg.textContent = data.error || "Credenciais inválidas.";
-      return;
-    }
-    const tk = data.token;
-    token = tk;
-    localStorage.setItem("adm_token", tk);
-    setLogged(true);
-    await loadSummary();
-    await loadDocs();
-  }catch(e){
-    els.loginMsg.textContent = "Erro de rede ou CORS. Verifique se o domínio desta página está liberado no backend (ALLOWED_ORIGINS) e tente novamente.";
-  }
+    const { ok, token: tk } = await api("/auth/login", { method:"POST", body: JSON.stringify({ cpf: els.cpf.value, password: els.pwd.value }) });
+    if(ok){ token=tk; localStorage.setItem("adm_token", tk); setLogged(true); await loadSummary(); await loadDocs(); }
+  }catch(e){ els.loginMsg.textContent = "Falha no login"; }
 };
+
 els.logoutBtn.onclick = ()=> setLogged(false);
 
 async function loadSummary(){
@@ -318,6 +298,59 @@ function renderHistorico(container, paciente, items){
   container.innerHTML = html;
 }
 
+</script>
+
+<!-- Login hotfix: ensure admin login works even if earlier script fails -->
+<script>
+(function(){
+  try{
+    var API = (localStorage.getItem('API_BASE') || 'https://remedy-queimadas-api.onrender.com').replace(/\/$/,'');    
+    var btn = document.getElementById('loginBtn');
+    var fieldCPF = document.getElementById('cpf');
+    var fieldPwd = document.getElementById('pwd');
+    var msg = document.getElementById('loginMsg');
+    var secLogin = document.getElementById('login');
+    var secDash = document.getElementById('dash');
+    if(btn && fieldCPF && fieldPwd){
+      btn.addEventListener('click', async function(){
+        try{
+          btn.disabled = true;
+          msg.textContent = 'Validando credenciais...';
+          var cpf = (fieldCPF.value || '').replace(/\D+/g,'');
+          var password = fieldPwd.value || '';
+          const res = await fetch(API + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cpf: cpf, password: password })
+          });
+          const data = await res.json().catch(()=>({ ok:false }));
+          if(res.ok && data && (data.ok === true || data.token)){
+            var tk = data.token || data.accessToken || data.jwt || '';
+            if(tk){ localStorage.setItem('adm_token', tk); }
+            msg.textContent = 'Login efetuado.';
+            // Mostrar painel
+            if(secLogin) secLogin.classList.add('hidden');
+            if(secDash) secDash.classList.remove('hidden');
+            // Tenta recarregar recursos do painel se funções existirem
+            try{
+              if(typeof setLogged === 'function'){ setLogged(true); }
+              if(typeof loadSummary === 'function'){ await loadSummary(); }
+              if(typeof loadDocs === 'function'){ await loadDocs(); }
+            }catch(e){ /* ignora */ }
+          }else{
+            msg.textContent = (data && data.error) ? data.error : 'Falha no login';
+          }
+        }catch(e){
+          msg.textContent = 'Erro de rede no login';
+        }finally{
+          btn.disabled = false;
+        }
+      });
+    }
+  }catch(e){
+    // silencioso
+  }
+})();
 </script>
 </body>
 </html>
