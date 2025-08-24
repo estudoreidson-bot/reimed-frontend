@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Médico – Queimadas Telemedicina</title>
+  <title>Área do Médico Administrador</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    body{background:#f5f7fb;font-family:system-ui,Segoe UI,Roboto,Arial}
     .container{max-width:1100px;margin:20px auto;padding:16px;background:#fff;border:1px solid #e5e7eb;border-radius:12px}
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
     .row > *{flex:1}
@@ -13,344 +14,145 @@
     input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
     button{padding:10px 16px;border:1px solid #0f172a;background:#0f172a;color:#fff;border-radius:8px;cursor:pointer}
     button.secondary{background:#fff;color:#0f172a}
-    .hidden{display:none}
+    .stats{display:flex;gap:10px}
+    .stat{flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc}
     table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{border:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
-    th{background:#f1f5f9}
-    .status{font-weight:700}
-    .pill{display:inline-block;padding:2px 8px;border-radius:16px;border:1px solid #cbd5e1}
-    .pill.pendente{background:#fef3c7}
-    .pill.aprovado{background:#dcfce7}
-    .pill.rejeitado{background:#fee2e2}
-    header img.qbanner{height:48px;width:auto}
-    header{display:flex;gap:12px;align-items:center;padding:12px 0}
-    .totals{display:flex;gap:12px;margin-top:12px}
-    .card{flex:1;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fafafa}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center}
-    .modal .box{background:#fff;border-radius:12px;max-width:700px;width:95%;padding:16px}
-    .right{float:right}
-    .login{max-width:380px;margin:80px auto}
-    .muted{color:#64748b;font-size:14px}
+    th, td{border-top:1px solid #e5e7eb;padding:8px;text-align:left;font-size:14px}
+    .right{ text-align:right }
+    .hide{display:none}
   </style>
 </head>
 <body>
-  <div class="container" id="app">
-    <header>
-      <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
-      <div>
-        <h1>Área do Médico Administrador</h1>
-        <div class="muted">Valide receitas, relatórios, encaminhamentos e visualize atendimentos</div>
-      </div>
-      <div class="right">
-        <button id="logoutBtn" class="secondary hidden">Sair</button>
-      </div>
-    </header>
-<div class="container"><div class="row"><button id="btn-docs">Documentos</button><button id="btn-historico" class="secondary">Histórico</button></div></div>
+<header class="container">
+  <h2>Área do Médico Administrador</h2>
+  <p>Valide receitas, relatórios, encaminhamentos e visualize atendimentos.</p>
+</header>
 
-    <section id="login" class="login">
-      <h2>Acesso restrito</h2>
-      <label>CPF</label>
-      <input id="cpf" inputmode="numeric" maxlength="14" placeholder="Seu CPF">
-      <label>Senha</label>
-      <input id="pwd" type="password" placeholder="Sua senha">
-      <div style="margin-top:12px">
-        <button id="loginBtn">Entrar</button>
-      </div>
-      <div id="loginMsg" class="muted" style="margin-top:8px"></div>
-    </section>
-
-    <section id="dash" class="hidden">
-      <div class="row">
-        <div>
-          <label>Período inicial</label><input type="date" id="start">
-        </div>
-        <div>
-          <label>Período final</label><input type="date" id="end">
-        </div>
-        <div>
-          <button id="filtrar">Buscar</button>
-        </div>
-        <div>
-          <button id="imprimir">Imprimir PDFs do período</button>
-        </div>
-      </div>
-
-      <div class="totals">
-        <div class="card"><div>Total</div><div id="t_total" class="status">0</div></div>
-        <div class="card"><div>Pendentes</div><div id="t_pendentes" class="status">0</div></div>
-        <div class="card"><div>Aprovados</div><div id="t_aprovados" class="status">0</div></div>
-        <div class="card"><div>Rejeitados</div><div id="t_rejeitados" class="status">0</div></div>
-      </div>
-
-      <table id="tbl">
-        <thead>
-          <tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </div>
-
-  <div id="modal" class="modal"><div class="box">
-    <h3 id="m_title">Documento</h3>
-    <textarea id="m_text" rows="16"></textarea>
+<main class="container">
+  <section id="loginSec">
     <div class="row">
-      <button id="m_cancel" class="secondary">Cancelar</button>
-      <div style="flex:1"></div>
-      <button id="m_reject" class="secondary">Rejeitar</button>
-      <button id="m_approve">Aprovar</button>
+      <label>CPF<br><input id="cpf" placeholder="Apenas números"></label>
+      <label>Senha<br><input id="pwd" type="password"></label>
+      <div><button id="entrar">Entrar</button></div>
     </div>
-  </div></div>
+    <p id="loginMsg"></p>
+  </section>
+
+  <section id="dashSec" class="hide">
+    <div class="row">
+      <label>Período inicial<br><input type="date" id="start"></label>
+      <label>Período final<br><input type="date" id="end"></label>
+      <div><button id="buscar">Buscar</button></div>
+      <div><button id="imprimir" class="secondary">Imprimir PDFs do período</button></div>
+      <div class="right"><button id="sair" class="secondary">Sair</button></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">Total<br><b id="stTotal">0</b></div>
+      <div class="stat">Pendentes<br><b id="stPend">0</b></div>
+      <div class="stat">Aprovados<br><b id="stApr">0</b></div>
+      <div class="stat">Rejeitados<br><b id="stRej">0</b></div>
+    </div>
+
+    <table id="tabela">
+      <thead><tr><th>ID</th><th>Paciente</th><th>CPF</th><th>Tipo</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
 
 <script>
-const API = "https://remedy-queimadas-api.onrender.com";
-let token = localStorage.getItem("adm_token") || null;
+  const API = localStorage.getItem('API_BASE') || 'https://remedy-queimadas-api.onrender.com';
+  let adminToken = localStorage.getItem('adm_token') || '';
 
-const els = {
-  login: document.getElementById('login'),
-  dash: document.getElementById('dash'),
-  cpf: document.getElementById('cpf'),
-  pwd: document.getElementById('pwd'),
-  loginBtn: document.getElementById('loginBtn'),
-  loginMsg: document.getElementById('loginMsg'),
-  logoutBtn: document.getElementById('logoutBtn'),
-  start: document.getElementById('start'),
-  end: document.getElementById('end'),
-  filtrar: document.getElementById('filtrar'),
-  imprimir: document.getElementById('imprimir'),
-  t_total: document.getElementById('t_total'),
-  t_pendentes: document.getElementById('t_pendentes'),
-  t_aprovados: document.getElementById('t_aprovados'),
-  t_rejeitados: document.getElementById('t_rejeitados'),
-  tbl: document.getElementById('tbl').querySelector('tbody'),
-  modal: document.getElementById('modal'),
-  m_title: document.getElementById('m_title'),
-  m_text: document.getElementById('m_text'),
-  m_cancel: document.getElementById('m_cancel'),
-  m_reject: document.getElementById('m_reject'),
-  m_approve: document.getElementById('m_approve'),
-};
+  const loginSec = document.getElementById('loginSec');
+  const dashSec = document.getElementById('dashSec');
+  const msg = document.getElementById('loginMsg');
+  const cpf = document.getElementById('cpf');
+  const pwd = document.getElementById('pwd');
+  const entrar = document.getElementById('entrar');
+  const sair = document.getElementById('sair');
+  const start = document.getElementById('start');
+  const end = document.getElementById('end');
+  const buscar = document.getElementById('buscar');
+  const imprimir = document.getElementById('imprimir');
+  const tbody = document.querySelector('#tabela tbody');
+  const stTotal = document.getElementById('stTotal');
+  const stPend = document.getElementById('stPend');
+  const stApr  = document.getElementById('stApr');
+  const stRej  = document.getElementById('stRej');
 
-function show(el){ el.classList.remove('hidden'); }
-function hide(el){ el.classList.add('hidden'); }
-function authHeaders(){ return token ? { "Authorization":"Bearer "+token, "Content-Type":"application/json" } : {"Content-Type":"application/json"}; }
+  function showDash(on){
+    loginSec.classList.toggle('hide', on);
+    dashSec.classList.toggle('hide', !on);
+  }
 
-function setLogged(p){ 
-  if(p){ show(els.dash); hide(els.login); show(els.logoutBtn); } 
-  else { hide(els.dash); show(els.login); hide(els.logoutBtn); token=null; localStorage.removeItem('adm_token'); }
-}
+  function authHeaders(){
+    return adminToken ? { Authorization: 'Bearer '+adminToken } : {};
+  }
+  async function api(path, options){
+    const res = await fetch(API+path, { ...(options||{}), headers: { 'Content-Type':'application/json', ...(options&&options.headers||{}), ...authHeaders() } });
+    if(!res.ok) throw new Error(await res.text());
+    const ct = res.headers.get('content-type')||'';
+    return ct.includes('application/json') ? res.json() : res.text();
+  }
 
-async function api(path, opt={}){
-  const res = await fetch(API + path, { ...opt, headers: { ...(opt.headers||{}), ...authHeaders() } });
-  if(!res.ok){ const t = await res.text(); throw new Error(t || res.statusText); }
-  return await res.json();
-}
-
-els.loginBtn.onclick = async ()=>{
-  try{
-    const { ok, token: tk } = await api("/auth/login", { method:"POST", body: JSON.stringify({ cpf: els.cpf.value, password: els.pwd.value }) });
-    if(ok){ token=tk; localStorage.setItem("adm_token", tk); setLogged(true); await loadSummary(); await loadDocs(); }
-  }catch(e){ els.loginMsg.textContent = "Falha no login"; }
-};
-
-els.logoutBtn.onclick = ()=> setLogged(false);
-
-async function loadSummary(){
-  const qs = buildRangeQS();
-  const data = await api("/admin/summary"+qs);
-  els.t_total.textContent = data.total;
-  els.t_pendentes.textContent = data.pendentes;
-  els.t_aprovados.textContent = data.aprovados;
-  els.t_rejeitados.textContent = data.rejeitados;
-}
-
-function buildRangeQS(){
-  const p=[]; if(els.start.value) p.push("start="+els.start.value); if(els.end.value) p.push("end="+els.end.value);
-  return p.length ? ("?"+p.join("&")) : "";
-}
-
-async function loadDocs(){
-  const qs = buildRangeQS();
-  const data = await api("/admin/docs"+qs);
-  const tbody = els.tbl; tbody.innerHTML = "";
-  for(const d of (data.items||[])){
-    const tr = document.createElement('tr');
-    tr.innerHTML = "<td>"+d.id+"</td><td>"+(d.pacienteNome||"-")+"</td><td>"+(d.pacienteCPF||"-")+"</td><td>"+d.tipo+"</td>"+
-                   "<td><span class='pill "+d.status+"'>"+d.status+"</span></td><td>"+new Date(d.createdAt).toLocaleString()+"</td>"+
-                   "<td class='actions'></td>";
-    const actions = tr.querySelector('.actions');
-    const btnVer = document.createElement('button'); btnVer.textContent="Ver/Editar"; btnVer.onclick = ()=> openModal(d);
-    actions.appendChild(btnVer);
-    if(d.status!=="aprovado"){
-      const btnApr = document.createElement('button'); btnApr.textContent="Aprovar"; btnApr.onclick = ()=> approveDoc(d);
-      actions.appendChild(btnApr);
-      const btnRej = document.createElement('button'); btnRej.textContent="Rejeitar"; btnRej.onclick = ()=> rejectDoc(d);
-      actions.appendChild(btnRej);
+  async function doLogin(){
+    msg.textContent = 'Validando credenciais...';
+    try{
+      const j = await api('/auth/login', { method:'POST', body: JSON.stringify({ cpf: cpf.value.replace(/\\D+/g,''), password: pwd.value }) });
+      adminToken = j.token;
+      localStorage.setItem('adm_token', adminToken);
+      msg.textContent = '';
+      showDash(true);
+    }catch(e){
+      msg.textContent = 'Falha no login: ' + e.message;
     }
-    const btnImp = document.createElement('button'); btnImp.textContent="Imprimir"; btnImp.onclick = ()=> printDoc(d);
-    actions.appendChild(btnImp);
-    tbody.appendChild(tr);
   }
-}
+  entrar.onclick = doLogin;
+  sair.onclick = ()=>{ adminToken=''; localStorage.removeItem('adm_token'); showDash(false); };
 
-function openModal(doc){
-  els.m_title.textContent = "Documento #"+doc.id+" — "+doc.tipo;
-  els.m_text.value = doc.conteudo||"";
-  els.modal.style.display = "flex";
-  els.m_cancel.onclick = ()=> els.modal.style.display = "none";
-  els.m_approve.onclick = async ()=>{ await approveDoc(doc, els.m_text.value); els.modal.style.display="none"; };
-  els.m_reject.onclick = async ()=>{ await rejectDoc(doc); els.modal.style.display="none"; };
-}
+  async function carregar(){
+    const qs = `?start=${start.value||''}&end=${end.value||''}`;
+    const sum = await api('/admin/summary'+qs);
+    stTotal.textContent = sum.total;
+    stPend.textContent = sum.pendentes;
+    stApr.textContent = sum.aprovados;
+    stRej.textContent = sum.rejeitados;
 
-async function approveDoc(doc, editedText=null){
-  await api("/admin/docs/"+doc.id+"/approve", { method:"POST", body: JSON.stringify({ conteudo: editedText }) });
-  await loadSummary(); await loadDocs();
-}
-async function rejectDoc(doc){
-  await api("/admin/docs/"+doc.id+"/reject", { method:"POST" });
-  await loadSummary(); await loadDocs();
-}
-
-function printDoc(doc){
-  const w = window.open("", "_blank");
-  w.document.write("<pre style='white-space:pre-wrap;font:16px/1.4 system-ui,Segoe UI,Arial'>"+(doc.conteudo||"")+"</pre>");
-  w.document.close(); w.focus(); w.print();
-}
-
-els.filtrar.onclick = async ()=>{ await loadSummary(); await loadDocs(); };
-els.imprimir.onclick = async ()=>{
-  const qs = buildRangeQS();
-  const data = await api("/admin/docs"+qs);
-  // Apenas aprovados no relatório impresso
-  const onlyApproved = await api("/admin/docs"+qs + (qs.includes("?")?"&":"?") + "status=aprovado");
-  const data = onlyApproved;
-  const w = window.open("", "_blank");
-  let html = "<h1>Receitas e Documentos do período</h1>";
-  for(const d of (data.items||[])){
-    html += "<hr><h3>#"+d.id+" — "+d.tipo+" — "+(d.pacienteNome||"-")+"</h3><pre style='white-space:pre-wrap'>"+(d.conteudo||"")+"</pre>";
+    const data = await api('/admin/docs'+qs);
+    tbody.innerHTML = '';
+    (data.items||[]).forEach(d=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${d.id}</td>
+        <td>${d.pacienteNome||'-'}</td>
+        <td>${d.pacienteCPF||'-'}</td>
+        <td>${d.tipo}</td>
+        <td>${d.status}</td>
+        <td>${new Date(d.createdAt).toLocaleString()}</td>
+        <td>
+          <button data-id="${d.id}" data-s="aprovado">Aprovar</button>
+          <button data-id="${d.id}" data-s="rejeitado" class="secondary">Rejeitar</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
   }
-  w.document.write("<html><body>"+html+"</body></html>");
-  w.document.close(); w.focus(); w.print();
-};
 
-// Estado inicial
-if(token){ setLogged(true); loadSummary().then(loadDocs).catch(()=>setLogged(false)); }
-
-// ====== Histórico de pacientes (Admin) ======
-const btnDocs = document.getElementById('btn-docs');
-const btnHist = document.getElementById('btn-historico');
-const painelHist = document.getElementById('painel-historico');
-const painelDocs = document.querySelector('.container.docs') || document.querySelector('.container'); // melhor esforço
-if(btnDocs && btnHist && painelHist){
-  btnDocs.onclick = ()=>{ painelHist.classList.add('hidden'); if(painelDocs) painelDocs.classList.remove('hidden'); };
-  btnHist.onclick = ()=>{ if(painelDocs) painelDocs.classList.add('hidden'); painelHist.classList.remove('hidden'); };
-}
-
-async function adminGet(url){
-  const r = await fetch(API_BASE+url, { headers:{ 'Authorization':'Bearer '+(localStorage.getItem('adminToken')||'') } });
-  const j = await r.json().catch(()=>({ ok:false }));
-  if(!j.ok) throw new Error(j.error||'Falha');
-  return j;
-}
-document.getElementById('buscar')?.addEventListener('click', async ()=>{
-  const q = String(document.getElementById('busca').value||'').trim();
-  const out = document.getElementById('resultados'); out.innerHTML = '';
-  if(!q){ out.textContent = 'Informe CPF ou nome.'; return; }
-  try{
-    const lista = (await adminGet('/admin/pacientes/search?q='+encodeURIComponent(q))).items||[];
-    if(lista.length===0){ out.textContent = 'Nenhum paciente encontrado.'; return; }
-    // Se q for CPF exato, já mostrar histórico diretamente
-    const maybeCPF = q.replace(/\D+/g,'');
-    if(maybeCPF && maybeCPF.length>=11){
-      const hist = await adminGet('/admin/historico?cpf='+maybeCPF);
-      renderHistorico(out, { cpf: maybeCPF, nomeCompleto: (lista.find(p=>p.cpf===maybeCPF)||{}).nomeCompleto||'' }, hist.items||[]);
-      return;
-    }
-    // Caso seja por nome, listar opções clicáveis
-    const ul = document.createElement('ul');
-    for(const p of lista){
-      const li = document.createElement('li');
-      li.innerHTML = '<strong>'+p.nomeCompleto+'</strong> — CPF: '+p.cpf;
-      li.style.cursor = 'pointer';
-      li.onclick = async ()=>{
-        const hist = await adminGet('/admin/historico?cpf='+p.cpf);
-        renderHistorico(out, p, hist.items||[]);
-      };
-      ul.appendChild(li);
-    }
-    out.appendChild(ul);
-  }catch(e){
-    out.textContent = e.message;
+  buscar.onclick = carregar;
+  tbody.onclick = async (ev)=>{
+    const b = ev.target.closest('button'); if(!b) return;
+    const id = Number(b.dataset.id||0), status = b.dataset.s;
+    await api('/admin/docs/'+id+'/status', { method:'POST', body: JSON.stringify({ status }) });
+    await carregar();
   }
-});
 
-function renderHistorico(container, paciente, items){
-  let html = '<h3>Paciente: '+(paciente.nomeCompleto||'')+' — CPF '+(paciente.cpf||'')+'</h3>';
-  if(!items.length){ html += '<p>Sem consultas registradas.</p>'; container.innerHTML = html; return; }
-  html += '<div>';
-  for(const it of items){
-    html += '<hr><div><strong>'+it.createdAt+' — '+(it.specialty||'')+'</strong></div>';
-    html += '<div><em>Resumo do médico:</em></div>';
-    html += '<div style="white-space:pre-wrap">'+(it.assistant||'')+'</div>';
+  imprimir.onclick = ()=>{
+    const qs = `?start=${start.value||''}&end=${end.value||''}&token=${encodeURIComponent(adminToken)}`;
+    window.open(API+'/admin/docs/pdf'+qs, '_blank');
   }
-  html += '</div>';
-  container.innerHTML = html;
-}
 
-</script>
-
-<!-- Login hotfix: ensure admin login works even if earlier script fails -->
-<script>
-(function(){
-  try{
-    var API = (localStorage.getItem('API_BASE') || 'https://remedy-queimadas-api.onrender.com').replace(/\/$/,'');    
-    var btn = document.getElementById('loginBtn');
-    var fieldCPF = document.getElementById('cpf');
-    var fieldPwd = document.getElementById('pwd');
-    var msg = document.getElementById('loginMsg');
-    var secLogin = document.getElementById('login');
-    var secDash = document.getElementById('dash');
-    if(btn && fieldCPF && fieldPwd){
-      btn.addEventListener('click', async function(){
-        try{
-          btn.disabled = true;
-          msg.textContent = 'Validando credenciais...';
-          var cpf = (fieldCPF.value || '').replace(/\D+/g,'');
-          var password = fieldPwd.value || '';
-          const res = await fetch(API + '/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cpf: cpf, password: password })
-          });
-          const data = await res.json().catch(()=>({ ok:false }));
-          if(res.ok && data && (data.ok === true || data.token)){
-            var tk = data.token || data.accessToken || data.jwt || '';
-            if(tk){ localStorage.setItem('adm_token', tk); }
-            msg.textContent = 'Login efetuado.';
-            // Mostrar painel
-            if(secLogin) secLogin.classList.add('hidden');
-            if(secDash) secDash.classList.remove('hidden');
-            // Tenta recarregar recursos do painel se funções existirem
-            try{
-              if(typeof setLogged === 'function'){ setLogged(true); }
-              if(typeof loadSummary === 'function'){ await loadSummary(); }
-              if(typeof loadDocs === 'function'){ await loadDocs(); }
-            }catch(e){ /* ignora */ }
-          }else{
-            msg.textContent = (data && data.error) ? data.error : 'Falha no login';
-          }
-        }catch(e){
-          msg.textContent = 'Erro de rede no login';
-        }finally{
-          btn.disabled = false;
-        }
-      });
-    }
-  }catch(e){
-    // silencioso
-  }
-})();
+  // Estado inicial
+  if(adminToken){ showDash(true); } else { showDash(false); }
 </script>
 </body>
 </html>
