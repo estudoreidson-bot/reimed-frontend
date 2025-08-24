@@ -104,7 +104,7 @@
   </div></div>
 
 <script>
-const API = "https://remedy-queimadas-api.onrender.com";
+const API = (localStorage.getItem("API_BASE") || "https://remedy-queimadas-api.onrender.com");
 let token = localStorage.getItem("adm_token") || null;
 
 const els = {
@@ -134,12 +134,7 @@ const els = {
 
 function show(el){ el.classList.remove('hidden'); }
 function hide(el){ el.classList.add('hidden'); }
-function authHeaders(){
-  const h = { "Content-Type":"application/json" };
-  if(token){ h["Authorization"] = "Bearer " + token; }
-  return h;
-}
- : {"Content-Type":"application/json"}; }
+function authHeaders(){ return token ? { "Authorization":"Bearer "+token, "Content-Type":"application/json" } : {"Content-Type":"application/json"}; }
 
 function setLogged(p){ 
   if(p){ show(els.dash); hide(els.login); show(els.logoutBtn); } 
@@ -147,27 +142,38 @@ function setLogged(p){
 }
 
 async function api(path, opt={}){
-  const res = await fetch(API + path, { ...opt, headers: { ...authHeaders(), ...(opt.headers||{}) } });
-  let txt = ""; try { txt = await res.text(); } catch {}
-  let data = null; try { data = txt ? JSON.parse(txt) : null; } catch {}
-  if(!res.ok){
-    const msg = (data && (data.error || data.message)) || (res.status+" "+res.statusText) || "Falha";
-    throw new Error(msg);
-  }
-  return data;
-}
-), ...authHeaders() } });
+  const res = await fetch(API + path, { ...opt, headers: { ...(opt.headers||{}), ...authHeaders() } });
   if(!res.ok){ const t = await res.text(); throw new Error(t || res.statusText); }
   return await res.json();
 }
 
+
 els.loginBtn.onclick = async ()=>{
   try{
-    const { ok, token: tk } = await api("/auth/login", { method:"POST", body: JSON.stringify({ cpf: els.cpf.value, password: els.pwd.value }) });
-    if(ok){ token=tk; localStorage.setItem("adm_token", tk); setLogged(true); await loadSummary(); await loadDocs(); }
-  }catch(e){ els.loginMsg.textContent = "Falha no login"; }
+    els.loginMsg.textContent = "";
+    const cpf = String(els.cpf.value||"").replace(/\D+/g,"");
+    const password = String(els.pwd.value||"");
+    if(!cpf || !password){ els.loginMsg.textContent = "Informe CPF e senha."; return; }
+    const res = await fetch(API + "/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cpf, password })
+    });
+    const data = await res.json().catch(()=>({ ok:false, error:"Falha de rede" }));
+    if(!res.ok || !data.ok){
+      els.loginMsg.textContent = data.error || "Credenciais inválidas.";
+      return;
+    }
+    const tk = data.token;
+    token = tk;
+    localStorage.setItem("adm_token", tk);
+    setLogged(true);
+    await loadSummary();
+    await loadDocs();
+  }catch(e){
+    els.loginMsg.textContent = "Erro de rede ou CORS. Verifique se o domínio desta página está liberado no backend (ALLOWED_ORIGINS) e tente novamente.";
+  }
 };
-
 els.logoutBtn.onclick = ()=> setLogged(false);
 
 async function loadSummary(){
