@@ -5,29 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Conectando ao médico…</title>
   <link rel="stylesheet" href="style.css">
-<style>
-.topmenu{position:absolute;right:16px;top:12px;font-weight:700}
-.menu-btn{background:#fff;border:1px solid #cfd8ea;border-radius:10px;padding:8px 10px;cursor:pointer}
-.menu{position:absolute;right:0;margin-top:6px;background:#fff;border:1px solid #e6ebf5;border-radius:12px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.06);z-index:10}
-.menu a{display:block;padding:10px 12px;text-decoration:none;color:#0e8240}
-.menu a:hover{background:#f3f7ff}
-.container{max-width:920px;margin:20px auto;padding:16px}
-.item{background:#fff;border:1px solid #e6ebf5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
-.item .meta{font-size:13px;color:#5b6b8e;margin-bottom:6px}
-.item pre{white-space:pre-wrap}
-</style>
 </head>
 <body>
 <header>
   <img class="qbanner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas">
   <h1>Queimadas Telemedicina</h1>
-<nav class="topmenu">
-  <button id="userMenuBtn" class="menu-btn" style="display:none"><span id="helloTxt"></span> ▾</button>
-  <div id="userMenu" class="menu" style="display:none">
-    <a href="history.html" id="menuHist">Meu histórico</a>
-    <a href="#" id="menuLogout">Sair</a>
-  </div>
-</nav>
 </header>
 <main>
 <div class="chat"><div class="msg recep">Preparando sua sala com o médico…</div></div>
@@ -46,10 +28,10 @@ const API_BASE = (localStorage.getItem('API_BASE')||'https://remedy-queimadas-ap
     body:JSON.stringify({specialty})
   }).then(r=>r.json()).then(d=>{
     localStorage.setItem('sessionId', d.sessionId||'');
-    location.replace('medico.html');
+    location.replace('medico.html?especialidade=' + encodeURIComponent(specialty));
   }).catch(()=>{
     // mesmo que a API caia, segue para a sala (o médico vai avisar erro)
-    location.replace('medico.html');
+    location.replace('medico.html?especialidade=' + encodeURIComponent(specialty));
   });
 })();
 </script>
