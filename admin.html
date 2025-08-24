@@ -134,7 +134,12 @@ const els = {
 
 function show(el){ el.classList.remove('hidden'); }
 function hide(el){ el.classList.add('hidden'); }
-function authHeaders(){ return token ? { "Authorization":"Bearer "+token, "Content-Type":"application/json" } : {"Content-Type":"application/json"}; }
+function authHeaders(){
+  const h = { "Content-Type":"application/json" };
+  if(token){ h["Authorization"] = "Bearer " + token; }
+  return h;
+}
+ : {"Content-Type":"application/json"}; }
 
 function setLogged(p){ 
   if(p){ show(els.dash); hide(els.login); show(els.logoutBtn); } 
@@ -142,7 +147,16 @@ function setLogged(p){
 }
 
 async function api(path, opt={}){
-  const res = await fetch(API + path, { ...opt, headers: { ...(opt.headers||{}), ...authHeaders() } });
+  const res = await fetch(API + path, { ...opt, headers: { ...authHeaders(), ...(opt.headers||{}) } });
+  let txt = ""; try { txt = await res.text(); } catch {}
+  let data = null; try { data = txt ? JSON.parse(txt) : null; } catch {}
+  if(!res.ok){
+    const msg = (data && (data.error || data.message)) || (res.status+" "+res.statusText) || "Falha";
+    throw new Error(msg);
+  }
+  return data;
+}
+), ...authHeaders() } });
   if(!res.ok){ const t = await res.text(); throw new Error(t || res.statusText); }
   return await res.json();
 }
