@@ -248,6 +248,7 @@ function showPrescriptionImage(base64Url, docId){
       div.textContent = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+      if(role === "assistant") clearStatus();
 
       // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
@@ -269,20 +270,7 @@ function showPrescriptionImage(base64Url, docId){
       indicador.textContent = txt;
       chat.appendChild(indicador);
       chat.scrollTop = chat.scrollHeight;
-
-      // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
-      try{
-        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
-          const pacienteNome = localStorage.getItem('pacienteNome') || "";
-          const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", {
-            method:"POST",
-            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
-            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
-        }
-      }catch(_e){}
-    }
+}
     function clearStatus(){
       if (indicador && indicador.parentNode){
         indicador.parentNode.removeChild(indicador);
