@@ -57,11 +57,125 @@
   })();
 
 // ====== Poll de aprovações para exibir código ao paciente ======
+
+// === Renderização da Receita em Imagem com aviso no topo ===
+function renderPrescriptionImage(text, docId){
+  try{
+    const W = 1080;           // largura padrão para smartphones
+    const H = 1528;           // altura proporcional (aprox. 1.414 * 1080 ~ A4)
+    const P = 48;             // padding lateral
+    const bannerH = 120;      // altura do aviso superior
+    const lineH = 40;         // altura da linha do texto da receita
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // fundo branco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,W,H);
+
+    // banner superior
+    ctx.fillStyle = '#0f172a'; // azul escuro do site
+    ctx.fillRect(0,0,W,bannerH);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px system-ui, -apple-system, Segoe UI, Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const aviso = 'AVISO: leve esta imagem na Farmácia parceira ou Farmácia Básica do SUS.';
+    ctx.fillText(aviso, W/2, bannerH/2);
+
+    // título da receita
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 44px system-ui, -apple-system, Segoe UI, Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Receita Médica', P, bannerH + 24);
+
+    // corpo do texto (conteúdo aprovado)
+    ctx.fillStyle = '#111827';
+    ctx.font = '28px system-ui, -apple-system, Segoe UI, Arial';
+    ctx.textAlign = 'left';
+    const maxWidth = W - P*2;
+    let y = bannerH + 24 + 56;
+
+    const paragraphs = String(text||'').replace(/\r\n/g,'\n').split(/\n{2,}/);
+    function wrapAndDraw(t){
+      const words = t.split(/\s+/);
+      let line = '';
+      for(const w of words){
+        const test = line ? line + ' ' + w : w;
+        const m = ctx.measureText(test);
+        if(m.width > maxWidth){
+          ctx.fillText(line, P, y);
+          y += lineH;
+          line = w;
+        }else{
+          line = test;
+        }
+      }
+      if(line){
+        ctx.fillText(line, P, y);
+        y += lineH;
+      }
+      y += 12;
+    }
+    for(const p of paragraphs){
+      wrapAndDraw(p.trim());
+    }
+
+    // rodapé com carimbo simplificado
+    y += 8;
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.strokeRect(P, y, W - P*2, 140);
+    ctx.fillStyle = '#374151';
+    ctx.font = '24px system-ui, -apple-system, Segoe UI, Arial';
+    ctx.fillText('Documento aprovado pelo médico responsável.', P+16, y+20);
+    ctx.fillText('Apresente esta imagem na Farmácia parceira ou Básica.', P+16, y+58);
+    ctx.fillText('ID do documento: #' + (docId||'-'), P+16, y+96);
+
+    return canvas.toDataURL('image/png');
+  }catch(e){
+    return null;
+  }
+}
+
+// === Exibição na conversa e download com clique ===
+function showPrescriptionImage(base64Url, docId){
+  if(!base64Url) return;
+  const chat = document.getElementById('chat') || document.querySelector('.chat');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  const img = document.createElement('img');
+  img.src = base64Url;
+  img.alt = 'Receita aprovada';
+  img.style.maxWidth = '100%';
+  img.style.borderRadius = '12px';
+  img.style.border = '1px solid var(--borda)';
+  img.style.cursor = 'pointer';
+  img.title = 'Toque para baixar a imagem da receita';
+  div.appendChild(img);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+
+  img.addEventListener('click', function(){
+    try{
+      const a = document.createElement('a');
+      a.href = base64Url;
+      a.download = 'receita-' + (docId||'aprovada') + '.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }catch(_){ /* silencioso */ }
+  });
+}
+
 (function initApprovalPolling(){
   const shown = new Set();
   async function poll(){
     try{
-      const h = await fetch(`${API_BASE}/patient/docs`, {
+      const h = await fetch(`${API_BASE}/anon/docs?sid=${encodeURIComponent(ANON_SID||"")}` , {
         headers:{ "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') }
       });
       const data = await h.json().catch(()=>({}));
@@ -77,6 +191,12 @@
             "3) O atendente validará e dispensará conforme a receita aprovada."
           ].join("\n");
           addMsg("assistant", msg);
+          // Gera imagem da receita com aviso no topo e mostra com clique para download
+          try{
+            const imgUrl = renderPrescriptionImage(d.conteudo || '', d.id);
+            showPrescriptionImage(imgUrl, d.id);
+          }catch(_){ /* silencioso */ }
+        
         }
       }
     }catch(e){ /* silencioso */ }
@@ -111,6 +231,18 @@
   <script>
     // ====== Config ======
     const API_BASE = "https://remedy-queimadas-api.onrender.com";
+    // === Sessão anônima (sem CPF/login) ===
+    let ANON_SID = localStorage.getItem("ANON_SID") || "";
+    async function ensureAnonSID(){
+      try{
+        if(ANON_SID) return ANON_SID;
+        const r = await fetch(`${API_BASE}/anon/start`, { method:"POST" });
+        const d = await r.json().catch(()=>({}));
+        if(d && d.sid){ ANON_SID = d.sid; localStorage.setItem("ANON_SID", ANON_SID); }
+        return ANON_SID;
+      }catch(_){ return ""; }
+    }
+
     const ESPECIALIDADE = (localStorage.getItem("selectedSpecialty") || new URLSearchParams(location.search).get("especialidade") || "Clínico Geral");
 
     // ====== Estado ======
@@ -134,11 +266,7 @@
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", {
-            method:"POST",
-            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
-            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
+          fetch(API_BASE + "/admin/docs", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tipo:"receita", conteudo: text, sid: ANON_SID }) }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -155,11 +283,7 @@
         if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
           const pacienteNome = localStorage.getItem('pacienteNome') || "";
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
-          fetch(API_BASE + "/admin/docs", {
-            method:"POST",
-            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
-            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
-          }).catch(()=>{});
+          fetch(API_BASE + "/admin/docs", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tipo:"receita", conteudo: text, sid: ANON_SID }) }).catch(()=>{});
         }
       }catch(_e){}
     }
@@ -192,15 +316,13 @@ clearStatus();
     }
 
     async function chamarIA(){
+      await ensureAnonSID();
       const body = {
         specialty: ESPECIALIDADE,
         history: historico,
         patientMeta: {}
       };
-      const resp = await fetch(`${API_BASE}/api/medico/chat`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
-        body: JSON.stringify(body)
+      const resp = await fetch(`${API_BASE}/api/medico/chat`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(Object.assign({}, body, { sid: ANON_SID }))
       });
       if(!resp.ok) throw new Error("Falha ao contatar IA");
       const data = await resp.json();
@@ -285,7 +407,7 @@ clearStatus();
   const shown = new Set();
   async function poll(){
     try{
-      const h = await fetch(`${API_BASE}/patient/docs`, {
+      const h = await fetch(`${API_BASE}/anon/docs?sid=${encodeURIComponent(ANON_SID||"")}` , {
         headers:{ "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') }
       });
       const data = await h.json().catch(()=>({}));
