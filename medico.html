@@ -48,6 +48,19 @@
       .msg{ font-size:15px; }
     }
   </style>
+
+<script>
+  (function initAnon(){
+    const API = 'https://remedy-queimadas-api.onrender.com';
+    if (!localStorage.getItem('API_BASE')) localStorage.setItem('API_BASE', API);
+    if (!localStorage.getItem('sessionId')) {
+      const sid = 'sess_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('sessionId', sid);
+    }
+    fetch(localStorage.getItem('API_BASE') + '/health').catch(()=>{});
+  })();
+</script>
+
 </head>
 <script>
   (function(){
@@ -55,34 +68,6 @@
       location.replace('login.html');
     }
   })();
-
-    // Captura de WhatsApp quando solicitado
-    function maybeCaptureWhatsapp(raw){
-      try{
-        if(sessionStorage.getItem("expectWhatsapp")==="1"){
-          const num = String(raw||"").replace(/\D+/g,'');
-          if(num.length>=10){
-            sessionStorage.removeItem("expectWhatsapp");
-            localStorage.setItem("pacienteWhatsApp", num);
-            // envia para backend
-            fetch(API_BASE + "/patient/whatsapp", {
-              method:"POST",
-              headers:{ "Content-Type":"application/json", "Authorization":"Bearer " + (localStorage.getItem("patientToken")||"") },
-              body: JSON.stringify({ whatsapp: num })
-            }).catch(()=>{});
-            // confirma no chat
-            const ok = document.createElement("div");
-            ok.className = "msg m-med";
-            ok.textContent = "Perfeito. Assim que o médico administrador validar, enviaremos sua receita em PDF para o seu WhatsApp.";
-            chat.appendChild(ok);
-            chat.scrollTop = chat.scrollHeight;
-            return true; // consumiu a mensagem
-          }
-        }
-      }catch{}
-      return false;
-    }
-
 </script>
 
 <body>
@@ -120,52 +105,46 @@
     const historico = []; // {role, content}
     let indicador;
 
-    
-function addMsg(role, text){
-      // Sanitize assistant output: remove status lines and assinatura/STATUS tags
-      function sanitizeAssistantText(t){
-        let s = String(t||"");
-        // remove "Assinatura digital: ... [STATUS: ...]"
-        s = s.replace(/Assinatura\s*digital:.*?\[STATUS:[^\]]*\]\s*/gi, '');
-        // remove any residual [STATUS: ...] tokens
-        s = s.replace(/\[STATUS:[^\]]*\]/gi, '');
-        return s.trim();
-      }
-
+    function addMsg(role, text){
       const div = document.createElement("div");
       div.className = "msg " + (role === "assistant" ? "m-med" : "m-user");
-      if(role === "assistant") text = sanitizeAssistantText(text);
       div.textContent = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
 
-      // Se era receita/diagnóstico, pedir WhatsApp do paciente (uma única vez)
+      // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
       try{
-        const alreadyAsked = sessionStorage.getItem("askedWhatsapp") === "1";
-        const hasPhone = !!(localStorage.getItem("pacienteWhatsApp")||"");
-        const looksLikePrescription = /\\bReceita\\b|\\bPrescri[cç][aã]o\\b|\\bRx\\b/i.test(text);
-        if(role === "assistant" && looksLikePrescription && !alreadyAsked && !hasPhone){
-          const ask = document.createElement("div");
-          ask.className = "msg m-med";
-          ask.textContent = "Para enviar sua receita validada em PDF, informe seu número de WhatsApp com DDD. Ex.: 74999990000";
-          chat.appendChild(ask);
-          chat.scrollTop = chat.scrollHeight;
-          sessionStorage.setItem("askedWhatsapp","1");
-          // Muda placeholder do input para sugerir o formato
-          const inp = document.querySelector("#msg");
-          if(inp) inp.placeholder = "Digite seu WhatsApp (somente números, com DDD)";
-          // Marca o próximo envio do paciente como telefone
-          sessionStorage.setItem("expectWhatsapp","1");
+        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+          const pacienteNome = localStorage.getItem('pacienteNome') || "";
+          const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
+          fetch(API_BASE + "/admin/docs", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
+            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
+          }).catch(()=>{});
         }
-      }catch{}
+      }catch(_e){}
     }
     function status(txt){
       clearStatus();
-      indicador = document.createElement('div');
-      indicador.className = 'status';
+      indicador = document.createElement("div");
+      indicador.className = "status";
       indicador.textContent = txt;
       chat.appendChild(indicador);
       chat.scrollTop = chat.scrollHeight;
+
+      // Se a resposta contém STATUS aguardando receita, envia para fila do administrador
+      try{
+        if(role === "assistant" && /\[STATUS:\s*aguardando receita\]/i.test(text)){
+          const pacienteNome = localStorage.getItem('pacienteNome') || "";
+          const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
+          fetch(API_BASE + "/admin/docs", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
+            body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
+          }).catch(()=>{});
+        }
+      }catch(_e){}
     }
     function clearStatus(){
       if (indicador && indicador.parentNode){
@@ -214,7 +193,6 @@ function addMsg(role, text){
     async function enviarTexto(){
       const txt = (input.value || "").trim();
       if(!txt) return;
-      if(maybeCaptureWhatsapp(txt)){ input.value=''; return; }
       historico.push({ role:"user", content: txt });
       addMsg("user", txt);
       input.value = "";
@@ -270,10 +248,7 @@ function addMsg(role, text){
         historico.push({ role:"assistant", content: primeira });
         addMsg("assistant", primeira);
         try{
-          fetch(API_BASE+'/patient/consultas', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('patientToken')||'') },
-            body: JSON.stringify({ specialty: ESPECIALIDADE, messages: historico, assistant: primeira })
+          fetch(API_BASE + '/patient/consultas', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sessionId: localStorage.getItem('sessionId'),  specialty: ESPECIALIDADE, messages: historico, assistant: primeira })
           });
         }catch(e){ console.warn('log consulta falhou', e); }
       }catch(e){
@@ -283,34 +258,6 @@ function addMsg(role, text){
         clearStatus();
       }
     })();
-  
-    // Captura de WhatsApp quando solicitado
-    function maybeCaptureWhatsapp(raw){
-      try{
-        if(sessionStorage.getItem("expectWhatsapp")==="1"){
-          const num = String(raw||"").replace(/\D+/g,'');
-          if(num.length>=10){
-            sessionStorage.removeItem("expectWhatsapp");
-            localStorage.setItem("pacienteWhatsApp", num);
-            // envia para backend
-            fetch(API_BASE + "/patient/whatsapp", {
-              method:"POST",
-              headers:{ "Content-Type":"application/json", "Authorization":"Bearer " + (localStorage.getItem("patientToken")||"") },
-              body: JSON.stringify({ whatsapp: num })
-            }).catch(()=>{});
-            // confirma no chat
-            const ok = document.createElement("div");
-            ok.className = "msg m-med";
-            ok.textContent = "Perfeito. Assim que o médico administrador validar, enviaremos sua receita em PDF para o seu WhatsApp.";
-            chat.appendChild(ok);
-            chat.scrollTop = chat.scrollHeight;
-            return true; // consumiu a mensagem
-          }
-        }
-      }catch{}
-      return false;
-    }
-
-</script>
+  </script>
 </body>
 </html>
