@@ -222,9 +222,6 @@ els.filtrar.onclick = async ()=>{ await loadSummary(); await loadDocs(); };
 els.imprimir.onclick = async ()=>{
   const qs = buildRangeQS();
   const data = await api("/admin/docs"+qs);
-  // Apenas aprovados no relatório impresso
-  const onlyApproved = await api("/admin/docs"+qs + (qs.includes("?")?"&":"?") + "status=aprovado");
-  const data = onlyApproved;
   const w = window.open("", "_blank");
   let html = "<h1>Receitas e Documentos do período</h1>";
   for(const d of (data.items||[])){
@@ -298,59 +295,6 @@ function renderHistorico(container, paciente, items){
   container.innerHTML = html;
 }
 
-</script>
-
-<!-- Login hotfix: ensure admin login works even if earlier script fails -->
-<script>
-(function(){
-  try{
-    var API = (localStorage.getItem('API_BASE') || 'https://remedy-queimadas-api.onrender.com').replace(/\/$/,'');    
-    var btn = document.getElementById('loginBtn');
-    var fieldCPF = document.getElementById('cpf');
-    var fieldPwd = document.getElementById('pwd');
-    var msg = document.getElementById('loginMsg');
-    var secLogin = document.getElementById('login');
-    var secDash = document.getElementById('dash');
-    if(btn && fieldCPF && fieldPwd){
-      btn.addEventListener('click', async function(){
-        try{
-          btn.disabled = true;
-          msg.textContent = 'Validando credenciais...';
-          var cpf = (fieldCPF.value || '').replace(/\D+/g,'');
-          var password = fieldPwd.value || '';
-          const res = await fetch(API + '/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cpf: cpf, password: password })
-          });
-          const data = await res.json().catch(()=>({ ok:false }));
-          if(res.ok && data && (data.ok === true || data.token)){
-            var tk = data.token || data.accessToken || data.jwt || '';
-            if(tk){ localStorage.setItem('adm_token', tk); }
-            msg.textContent = 'Login efetuado.';
-            // Mostrar painel
-            if(secLogin) secLogin.classList.add('hidden');
-            if(secDash) secDash.classList.remove('hidden');
-            // Tenta recarregar recursos do painel se funções existirem
-            try{
-              if(typeof setLogged === 'function'){ setLogged(true); }
-              if(typeof loadSummary === 'function'){ await loadSummary(); }
-              if(typeof loadDocs === 'function'){ await loadDocs(); }
-            }catch(e){ /* ignora */ }
-          }else{
-            msg.textContent = (data && data.error) ? data.error : 'Falha no login';
-          }
-        }catch(e){
-          msg.textContent = 'Erro de rede no login';
-        }finally{
-          btn.disabled = false;
-        }
-      });
-    }
-  }catch(e){
-    // silencioso
-  }
-})();
 </script>
 </body>
 </html>
