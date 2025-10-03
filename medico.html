@@ -48,28 +48,7 @@
       .msg{ font-size:15px; }
     }
   </style>
-
-<script>
-  (function initAnon(){
-    const API = 'https://remedy-queimadas-api.onrender.com';
-    if (!localStorage.getItem('API_BASE')) localStorage.setItem('API_BASE', API);
-    if (!localStorage.getItem('sessionId')) {
-      const sid = 'sess_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem('sessionId', sid);
-    }
-    fetch(localStorage.getItem('API_BASE') + '/health').catch(()=>{});
-  })();
-</script>
-
 </head>
-<script>
-  (function(){
-    if(!localStorage.getItem('patientToken')){
-      location.replace('login.html');
-    }
-  })();
-</script>
-
 <body>
   <header>
     <img class="banner" src="prefeitura-queimadas.jpg" alt="Prefeitura de Queimadas" />
@@ -119,7 +98,7 @@
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
-            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
+            headers:{ "Content-Type":"application/json" },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
           }).catch(()=>{});
         }
@@ -140,7 +119,7 @@
           const pacienteCPF = localStorage.getItem('pacienteCPF') || "";
           fetch(API_BASE + "/admin/docs", {
             method:"POST",
-            headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
+            headers:{ "Content-Type":"application/json" },
             body: JSON.stringify({ tipo:"receita", pacienteNome, pacienteCPF, conteudo: text })
           }).catch(()=>{});
         }
@@ -181,7 +160,7 @@
       };
       const resp = await fetch(`${API_BASE}/api/medico/chat`, {
         method:"POST",
-        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+(localStorage.getItem('patientToken')||'') },
+        headers:{ "Content-Type":"application/json" },
         body: JSON.stringify(body)
       });
       if(!resp.ok) throw new Error("Falha ao contatar IA");
@@ -247,10 +226,6 @@
         await pensandoEDigitando(primeira);
         historico.push({ role:"assistant", content: primeira });
         addMsg("assistant", primeira);
-        try{
-          fetch(API_BASE + '/patient/consultas', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sessionId: localStorage.getItem('sessionId'),  specialty: ESPECIALIDADE, messages: historico, assistant: primeira })
-          });
-        }catch(e){ console.warn('log consulta falhou', e); }
       }catch(e){
         addMsg("assistant", "Não consegui contato com o servidor agora. Vamos tentar novamente em alguns segundos. Se persistir, volte para a recepção.");
         console.error(e);
