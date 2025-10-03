@@ -46,7 +46,6 @@
         <button id="logoutBtn" class="secondary hidden">Sair</button>
       </div>
     </header>
-<div class="container"><div class="row"><button id="btn-docs">Documentos</button><button id="btn-historico" class="secondary">Histórico</button></div></div>
 
     <section id="login" class="login">
       <h2>Acesso restrito</h2>
@@ -233,68 +232,6 @@ els.imprimir.onclick = async ()=>{
 
 // Estado inicial
 if(token){ setLogged(true); loadSummary().then(loadDocs).catch(()=>setLogged(false)); }
-
-// ====== Histórico de pacientes (Admin) ======
-const btnDocs = document.getElementById('btn-docs');
-const btnHist = document.getElementById('btn-historico');
-const painelHist = document.getElementById('painel-historico');
-const painelDocs = document.querySelector('.container.docs') || document.querySelector('.container'); // melhor esforço
-if(btnDocs && btnHist && painelHist){
-  btnDocs.onclick = ()=>{ painelHist.classList.add('hidden'); if(painelDocs) painelDocs.classList.remove('hidden'); };
-  btnHist.onclick = ()=>{ if(painelDocs) painelDocs.classList.add('hidden'); painelHist.classList.remove('hidden'); };
-}
-
-async function adminGet(url){
-  const r = await fetch(API_BASE+url, { headers:{ 'Authorization':'Bearer '+(localStorage.getItem('adminToken')||'') } });
-  const j = await r.json().catch(()=>({ ok:false }));
-  if(!j.ok) throw new Error(j.error||'Falha');
-  return j;
-}
-document.getElementById('buscar')?.addEventListener('click', async ()=>{
-  const q = String(document.getElementById('busca').value||'').trim();
-  const out = document.getElementById('resultados'); out.innerHTML = '';
-  if(!q){ out.textContent = 'Informe CPF ou nome.'; return; }
-  try{
-    const lista = (await adminGet('/admin/pacientes/search?q='+encodeURIComponent(q))).items||[];
-    if(lista.length===0){ out.textContent = 'Nenhum paciente encontrado.'; return; }
-    // Se q for CPF exato, já mostrar histórico diretamente
-    const maybeCPF = q.replace(/\D+/g,'');
-    if(maybeCPF && maybeCPF.length>=11){
-      const hist = await adminGet('/admin/historico?cpf='+maybeCPF);
-      renderHistorico(out, { cpf: maybeCPF, nomeCompleto: (lista.find(p=>p.cpf===maybeCPF)||{}).nomeCompleto||'' }, hist.items||[]);
-      return;
-    }
-    // Caso seja por nome, listar opções clicáveis
-    const ul = document.createElement('ul');
-    for(const p of lista){
-      const li = document.createElement('li');
-      li.innerHTML = '<strong>'+p.nomeCompleto+'</strong> — CPF: '+p.cpf;
-      li.style.cursor = 'pointer';
-      li.onclick = async ()=>{
-        const hist = await adminGet('/admin/historico?cpf='+p.cpf);
-        renderHistorico(out, p, hist.items||[]);
-      };
-      ul.appendChild(li);
-    }
-    out.appendChild(ul);
-  }catch(e){
-    out.textContent = e.message;
-  }
-});
-
-function renderHistorico(container, paciente, items){
-  let html = '<h3>Paciente: '+(paciente.nomeCompleto||'')+' — CPF '+(paciente.cpf||'')+'</h3>';
-  if(!items.length){ html += '<p>Sem consultas registradas.</p>'; container.innerHTML = html; return; }
-  html += '<div>';
-  for(const it of items){
-    html += '<hr><div><strong>'+it.createdAt+' — '+(it.specialty||'')+'</strong></div>';
-    html += '<div><em>Resumo do médico:</em></div>';
-    html += '<div style="white-space:pre-wrap">'+(it.assistant||'')+'</div>';
-  }
-  html += '</div>';
-  container.innerHTML = html;
-}
-
 </script>
 </body>
 </html>
