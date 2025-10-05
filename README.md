@@ -1,10 +1,5 @@
-# reimed-frontend-full (GitHub-ready)
-Páginas:
-- index.html (atalhos)
-- register/login/forgot/reset (fluxo de paciente com CPF)
-- history.html (lista consultas do paciente)
-- receptionist.html (escolhe especialidade)
-- medico.html (mostra especialidade escolhida; digita 1,7s/palavra)
+# Frontend – Queimadas Telemedicina (Netlify)
 
-Configuração:
-- `config.js` → `API_BASE` e `WORD_DELAY_MS` (pode alterar via `localStorage` também).
+Landing simples com CTA para WhatsApp do atendimento: +55 75 9 8145-7012.
+
+Editar o link do botão se necessário: `index.html` → `https://wa.me/557581457012?...`.
