@@ -1,28 +1,65 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Queimadas Telemedicina</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 40px 16px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 32px; }
-    h1 { margin: 0 0 12px 0; }
-    p { line-height: 1.6; }
-    .cta { display: inline-block; padding: 14px 22px; border-radius: 12px; text-decoration: none; border: 1px solid #2563eb; }
-    .cta:hover { background: #2563eb; color: #fff; }
-    .muted { color: #6b7280; font-size: 14px; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif;margin:0;background:#0f172a;color:#e2e8f0;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+    .card{max-width:720px;width:100%;background:#111827;border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.35);overflow:hidden}
+    header{padding:20px 24px;border-bottom:1px solid #1f2937;background:#0b1220}
+    header h1{margin:0;font-size:20px}
+    main{padding:24px}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    a.btn{display:inline-block;padding:12px 16px;border-radius:10px;text-decoration:none;color:#0b1220;background:#60a5fa;font-weight:600}
+    a.btn.telegram{background:#3b82f6;color:#0a1428}
+    .pill{font-size:12px;background:#1f2937;color:#93c5fd;border-radius:999px;padding:6px 10px;margin-left:8px}
+    footer{padding:16px 24px;border-top:1px solid #1f2937;color:#94a3b8;font-size:12px;background:#0b1220}
+    .ok{color:#22c55e;font-weight:700}
+    .bad{color:#f43f5e;font-weight:700}
+    code{background:#0b1220;padding:2px 6px;border-radius:6px}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Queimadas Telemedicina</h1>
-      <p>Os atendimentos acontecem diretamente pelo WhatsApp. Ao clicar no botão abaixo, você falará com a recepção para iniciar sua consulta.</p>
-      <p><a class="cta" href="https://wa.me/557581457012?text=Ol%C3%A1!%20Gostaria%20de%20iniciar%20meu%20atendimento." rel="noopener">Iniciar atendimento no WhatsApp</a></p>
-      <p class="muted">Após a avaliação, a receita validada é enviada pelo próprio WhatsApp.</p>
-    </div>
+  <div class="card">
+    <header>
+      <h1>Queimadas Telemedicina <span class="pill">versão Telegram</span></h1>
+    </header>
+    <main>
+      <p>Atendimento rápido via bot. Clique para iniciar:</p>
+      <div class="actions">
+        <a class="btn telegram" id="tg" target="_blank" rel="noopener">Abrir no Telegram</a>
+      </div>
+
+      <h3 style="margin-top:28px">Status da API</h3>
+      <p id="status">Verificando...</p>
+
+      <h3 style="margin-top:16px">Como funciona</h3>
+      <ol>
+        <li>Clique em <b>Abrir no Telegram</b> e inicie a conversa com <code>/start</code>.</li>
+        <li>Envie nome completo e CPF.</li>
+        <li>Receba orientação da IA e do médico humano quando necessário.</li>
+      </ol>
+    </main>
+    <footer>
+      © Queimadas Telemedicina — FrontEnd estático para Netlify.
+    </footer>
   </div>
+
+  <script>
+    const BOT_USERNAME = "queimadas_telemedicina_bot"; // ajuste se mudar o @ do bot
+    const BACKEND_BASE_URL = "https://remedy-queimadas-api.onrender.com";
+
+    document.getElementById("tg").href = `https://t.me/${BOT_USERNAME}`;
+
+    fetch(BACKEND_BASE_URL + "/")
+      .then(r => r.text())
+      .then(() => {
+        document.getElementById("status").innerHTML = '<span class="ok">Online</span>';
+      })
+      .catch(() => {
+        document.getElementById("status").innerHTML = '<span class="bad">Offline</span>';
+      });
+  </script>
 </body>
 </html>

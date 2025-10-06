@@ -1,8 +1,6 @@
-[build]
-  command = ""
-  publish = "."
-
 [[headers]]
-  for = "/*"
+for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
+  Access-Control-Allow-Origin = "*"
+  X-Frame-Options = "DENY"
+  X-Content-Type-Options = "nosniff"
