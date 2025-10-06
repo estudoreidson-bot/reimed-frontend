@@ -1,6 +1,0 @@
-
-services:
-  - type: static
-    name: reimed-frontend
-    staticPublishPath: .
-    autoDeploy: true
