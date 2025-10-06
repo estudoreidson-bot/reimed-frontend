@@ -1,0 +1,17 @@
+
+<!doctype html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Esqueci minha senha</title><link rel="stylesheet" href="style.css"></head><body>
+<header><h3>Recuperar senha</h3></header>
+<main class="container">
+  <div class="row"><label>Email<br><input id="email" type="email" class="inpt"></label></div>
+  <div class="row"><button id="go" class="btn">Enviar link</button></div>
+  <p class="small">O link chega por e-mail se o serviço de e-mail estiver configurado.</p>
+</main>
+<script type="module">
+import { api } from './auth.js';
+go.onclick = async ()=>{
+  const d = await api('/auth/forgot','POST',{ email: email.value.trim() });
+  if(d.ok) alert('Se o e-mail existir, enviaremos um link.');
+};
+</script></body></html>

@@ -1,0 +1,22 @@
+
+<!doctype html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastrar</title><link rel="stylesheet" href="style.css"></head><body>
+<header><h3>Cadastrar paciente</h3></header>
+<main class="container">
+  <div class="row"><label>Nome<br><input id="name" class="inpt"></label></div>
+  <div class="row"><label>Email<br><input id="email" type="email" class="inpt"></label></div>
+  <div class="row"><label>CPF<br><input id="cpf" class="inpt"></label></div>
+  <div class="row"><label>Senha<br><input id="pw" type="password" class="inpt"></label></div>
+  <div class="row"><button id="go" class="btn">Cadastrar</button></div>
+</main>
+<script type="module">
+import { api, setToken } from './auth.js';
+go.onclick = async ()=>{
+  const d = await api('/auth/register','POST',{ name:name.value.trim(), email:email.value.trim(), cpf:cpf.value.trim(), password: pw.value });
+  if(!d.ok){ alert(d.error||'Falha no cadastro'); return; }
+  setToken(d.token);
+  localStorage.setItem('pacienteNome', d.user?.name||''); localStorage.setItem('pacienteCPF', d.user?.cpf||'');
+  location.replace('history.html');
+};
+</script></body></html>
