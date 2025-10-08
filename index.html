@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Queimadas Telemedicina • Atender pelo WhatsApp</title>
+  <title>Queimadas Telemedicina • WhatsApp</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="preload" as="style" href="style.css">
   <link rel="stylesheet" href="style.css">
@@ -25,20 +25,12 @@
       const link = buildWhatsAppLink(p, m);
       window.location.href = link;
     }
-    function openDoctorWhatsApp(){
-      const p = window.REIMED?.doctor_phone;
-      const m = window.REIMED?.defaultDoctorMessage || "";
-      const link = buildWhatsAppLink(p, m);
-      window.location.href = link;
-    }
     document.addEventListener("DOMContentLoaded", function(){
       if(window.REIMED?.autoRedirect){
-        setTimeout(openClientWhatsApp, 600);
+        setTimeout(openClientWhatsApp, 400);
       }
       const clientA = document.getElementById("client-link");
-      const doctorA = document.getElementById("doctor-link");
       if(clientA) clientA.href = buildWhatsAppLink(window.REIMED.client_phone, window.REIMED.defaultClientMessage);
-      if(doctorA) doctorA.href = buildWhatsAppLink(window.REIMED.doctor_phone, window.REIMED.defaultDoctorMessage);
     });
   </script>
 </head>
@@ -46,18 +38,11 @@
   <div class="container">
     <div class="card">
       <h1>Queimadas Telemedicina</h1>
-      <p class="sub">Atendimento agora é pelo WhatsApp. Se não abrir automaticamente, use os botões abaixo.</p>
+      <p class="sub">O atendimento inicia no WhatsApp oficial. Se não abrir automaticamente, use o botão abaixo.</p>
       <div class="actions">
-        <a id="client-link" class="btn" href="#">Atender pelo WhatsApp</a>
-        <a id="doctor-link" class="btn secondary" href="medico.html">Área do Médico (Validação)</a>
+        <a id="client-link" class="btn" href="#">Iniciar pelo WhatsApp</a>
       </div>
-      <p class="small">
-        Número de atendimento dos pacientes: <code>+55 75 9 8145 7012</code><br>
-        Número do médico humano para validação: <code>+55 75 9 8102 3473</code>
-      </p>
-      <div class="footer">
-        Ao iniciar a conversa, a recepção solicitará nome completo e CPF para cadastro e criará o prontuário.
-      </div>
+      <p class="small">WhatsApp oficial: <code>+55 75 9 8145 7012</code></p>
     </div>
   </div>
 </body>
