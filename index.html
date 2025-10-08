@@ -8,42 +8,24 @@
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
   <script>
-    function isMobile(){
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
+    function isMobile(){ return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); }
     function buildWhatsAppLink(phone, text){
       var msg = encodeURIComponent(text || "");
-      if(isMobile()){
-        return "https://wa.me/" + phone + "?text=" + msg;
-      }else{
-        return "https://web.whatsapp.com/send?phone=" + phone + "&text=" + msg;
-      }
-    }
-    function openClientWhatsApp(){
-      const p = window.REIMED?.client_phone;
-      const m = window.REIMED?.defaultClientMessage || "";
-      const link = buildWhatsAppLink(p, m);
-      window.location.href = link;
+      return (isMobile() ? "https://wa.me/" + phone : "https://web.whatsapp.com/send?phone=" + phone) + "&text=" + msg;
     }
     document.addEventListener("DOMContentLoaded", function(){
-      if(window.REIMED?.autoRedirect){
-        setTimeout(openClientWhatsApp, 400);
-      }
-      const clientA = document.getElementById("client-link");
-      if(clientA) clientA.href = buildWhatsAppLink(window.REIMED.client_phone, window.REIMED.defaultClientMessage);
+      const a = document.getElementById("go");
+      a.href = buildWhatsAppLink(window.REIMED.client_phone, window.REIMED.defaultClientMessage);
+      if(window.REIMED.autoRedirect){ setTimeout(()=> location.href = a.href, 400); }
     });
   </script>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h1>Queimadas Telemedicina</h1>
-      <p class="sub">O atendimento inicia no WhatsApp oficial. Se não abrir automaticamente, use o botão abaixo.</p>
-      <div class="actions">
-        <a id="client-link" class="btn" href="#">Iniciar pelo WhatsApp</a>
-      </div>
-      <p class="small">WhatsApp oficial: <code>+55 75 9 8145 7012</code></p>
-    </div>
+  <div class="wrap">
+    <h1>Queimadas Telemedicina</h1>
+    <p class="sub">Clique abaixo para iniciar seu atendimento no WhatsApp oficial.</p>
+    <a id="go" class="btn" href="#">Iniciar no WhatsApp</a>
+    <p class="small">WhatsApp oficial: <code>+55 75 9 8145 7012</code></p>
   </div>
 </body>
 </html>
