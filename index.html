@@ -2,12 +2,63 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Queimadas Telemedicina</title>
+  <title>Queimadas Telemedicina • Atender pelo WhatsApp</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preload" as="style" href="style.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
   <script>
-    // Ir direto para a recepção
-    location.replace('receptionist.html');
+    function isMobile(){
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    function buildWhatsAppLink(phone, text){
+      var msg = encodeURIComponent(text || "");
+      if(isMobile()){
+        return "https://wa.me/" + phone + "?text=" + msg;
+      }else{
+        return "https://web.whatsapp.com/send?phone=" + phone + "&text=" + msg;
+      }
+    }
+    function openClientWhatsApp(){
+      const p = window.REIMED?.client_phone;
+      const m = window.REIMED?.defaultClientMessage || "";
+      const link = buildWhatsAppLink(p, m);
+      window.location.href = link;
+    }
+    function openDoctorWhatsApp(){
+      const p = window.REIMED?.doctor_phone;
+      const m = window.REIMED?.defaultDoctorMessage || "";
+      const link = buildWhatsAppLink(p, m);
+      window.location.href = link;
+    }
+    document.addEventListener("DOMContentLoaded", function(){
+      if(window.REIMED?.autoRedirect){
+        setTimeout(openClientWhatsApp, 600);
+      }
+      const clientA = document.getElementById("client-link");
+      const doctorA = document.getElementById("doctor-link");
+      if(clientA) clientA.href = buildWhatsAppLink(window.REIMED.client_phone, window.REIMED.defaultClientMessage);
+      if(doctorA) doctorA.href = buildWhatsAppLink(window.REIMED.doctor_phone, window.REIMED.defaultDoctorMessage);
+    });
   </script>
 </head>
-<body></body>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Queimadas Telemedicina</h1>
+      <p class="sub">Atendimento agora é pelo WhatsApp. Se não abrir automaticamente, use os botões abaixo.</p>
+      <div class="actions">
+        <a id="client-link" class="btn" href="#">Atender pelo WhatsApp</a>
+        <a id="doctor-link" class="btn secondary" href="medico.html">Área do Médico (Validação)</a>
+      </div>
+      <p class="small">
+        Número de atendimento dos pacientes: <code>+55 75 9 8145 7012</code><br>
+        Número do médico humano para validação: <code>+55 75 9 8102 3473</code>
+      </p>
+      <div class="footer">
+        Ao iniciar a conversa, a recepção solicitará nome completo e CPF para cadastro e criará o prontuário.
+      </div>
+    </div>
+  </div>
+</body>
 </html>
